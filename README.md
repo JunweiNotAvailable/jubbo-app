@@ -20,3 +20,10 @@ When you're mid-conversation and struggling to express yourself, it steps in to 
 - Helping you interrupt politely, speak directly, or soften a message — depending on what the moment calls for
 
 Over time, the assistant learns from you and gradually helps you speak like the version of yourself you wish you could be in the moment.
+
+---
+
+## MVP
+- Simple UI, only 2 pages -> Home page with a button and status, toggle between listening and idle, Advices page to show the suggestions(full response, suggested words, tone, mindset...)
+- AI analyze and give real time advices based on what it just listened after user click stop listening
+- User is able to personalize the AI to understand them better, understand the context of the conversation, to talk more like them and give better advices
