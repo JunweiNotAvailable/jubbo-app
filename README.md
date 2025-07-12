@@ -27,3 +27,11 @@ Over time, the assistant learns from you and gradually helps you speak like the 
 - Simple UI, only 2 pages -> Home page with a button and status, toggle between listening and idle, Advices page to show the suggestions(full response, suggested words, tone, mindset...)
 - AI analyze and give real time advices based on what it just listened after user click stop listening
 - User is able to personalize the AI to understand them better, understand the context of the conversation, to talk more like them and give better advices
+
+## Tech Stack
+- Frontend -> Expo
+- Backend -> Node.js server
+- Database -> Neon serverless database
+- AI -> Instant feedback solution
+  - STT -> Deepgram Nova-2 (best balance between speed, accuracy, cost)
+  - Advices generation -> Claude 3.5 Haiku (fastest)
