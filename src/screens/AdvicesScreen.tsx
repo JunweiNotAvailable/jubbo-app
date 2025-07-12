@@ -3,8 +3,8 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Act
 import { StatusBar } from 'expo-status-bar';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../types/navigation';
-import { apiService, ConversationSuggestion } from '../services/apiService';
+import { RootStackParamList } from '../lib/types';
+import { apiService, ConversationSuggestion } from '../lib/api';
 
 type AdvicesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Advices'>;
 type AdvicesScreenRouteProp = RouteProp<RootStackParamList, 'Advices'>;

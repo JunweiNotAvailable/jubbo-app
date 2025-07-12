@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { RootStackParamList } from './src/types/navigation';
+import { RootStackParamList } from './src/lib/types';
 import { HomeScreen, AdvicesScreen, SettingsScreen } from './src/screens';
 
 const Stack = createStackNavigator<RootStackParamList>();

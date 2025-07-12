@@ -1,6 +1,6 @@
-import { RecordingResult } from './audioService';
-import { UserPreferences } from '../screens/SettingsScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RecordingResult } from './audio';
+import { UserPreferences } from '../screens/SettingsScreen';
 
 export interface ConversationSuggestion {
   id: string;
