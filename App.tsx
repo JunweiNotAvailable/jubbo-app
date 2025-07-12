@@ -1,40 +1,23 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { RootStackParamList } from './src/types/navigation';
+import { HomeScreen, AdvicesScreen } from './src/screens';
+
+const Stack = createStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>SpeakTruely</Text>
-      <Text style={styles.subtitle}>Real-Time Communication Assistant</Text>
-      <Text style={styles.tagline}>Make communication better</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator 
+        initialRouteName="Home"
+        screenOptions={{
+          headerShown: false, // Hide default headers since we have custom ones
+        }}
+      >
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Advices" component={AdvicesScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#34495e',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  tagline: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    fontStyle: 'italic',
-  },
-});
