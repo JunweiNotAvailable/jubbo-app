@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../lib/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../lib/config';
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Settings'>;
 
@@ -31,16 +32,60 @@ export default function SettingsScreen({ navigation }: Props) {
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadPreferences();
   }, []);
 
+  // Generate or retrieve user ID
+  const getUserId = async (): Promise<string> => {
+    try {
+      let storedUserId = await AsyncStorage.getItem('userId');
+      if (!storedUserId) {
+        storedUserId = `user_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+        await AsyncStorage.setItem('userId', storedUserId);
+      }
+      return storedUserId;
+    } catch (error) {
+      console.error('Error getting user ID:', error);
+      return `user_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+    }
+  };
+
   const loadPreferences = async () => {
     try {
-      const stored = await AsyncStorage.getItem('userPreferences');
-      if (stored) {
-        setPreferences(JSON.parse(stored));
+      const currentUserId = await getUserId();
+      setUserId(currentUserId);
+
+      // Try to load from server first
+      try {
+        const response = await fetch(`${API_URL}/api/data?table=user_preferences&user_id=${currentUserId}&limit=1`);
+        const data = await response.json();
+        
+        if (data.success && data.data.length > 0) {
+          const prefs = data.data[0];
+          setPreferences({
+            personalityStyle: prefs.personality_style || '',
+            conversationGoals: JSON.parse(prefs.conversation_goals || '[]'),
+            currentMood: prefs.current_mood || 'neutral',
+            communicationStyle: prefs.communication_style || 'balanced',
+            preferredTone: prefs.preferred_tone || 'warm',
+          });
+        } else {
+          // Fallback to local storage if no server data
+          const stored = await AsyncStorage.getItem('userPreferences');
+          if (stored) {
+            setPreferences(JSON.parse(stored));
+          }
+        }
+      } catch (serverError) {
+        console.error('Failed to load from server, using local storage:', serverError);
+        // Fallback to local storage
+        const stored = await AsyncStorage.getItem('userPreferences');
+        if (stored) {
+          setPreferences(JSON.parse(stored));
+        }
       }
     } catch (error) {
       console.error('Failed to load preferences:', error);
@@ -50,10 +95,75 @@ export default function SettingsScreen({ navigation }: Props) {
   };
 
   const savePreferences = async () => {
+    if (!userId) {
+      Alert.alert('Error', 'User ID not available');
+      return;
+    }
+
     setIsSaving(true);
     try {
+      // Save to local storage first (as backup)
       await AsyncStorage.setItem('userPreferences', JSON.stringify(preferences));
-      Alert.alert('Success', 'Your preferences have been saved!');
+
+      // Prepare data for server
+      const preferenceData = {
+        user_id: userId,
+        personality_style: preferences.personalityStyle,
+        conversation_goals: JSON.stringify(preferences.conversationGoals),
+        current_mood: preferences.currentMood,
+        communication_style: preferences.communicationStyle,
+        preferred_tone: preferences.preferredTone,
+        updated_at: new Date().toISOString(),
+      };
+
+      try {
+        // Check if user preferences already exist
+        const checkResponse = await fetch(`${API_URL}/api/data?table=user_preferences&user_id=${userId}&limit=1`);
+        const checkData = await checkResponse.json();
+        
+        if (checkData.success && checkData.data.length > 0) {
+          // Update existing preferences
+          const existingId = checkData.data[0].id;
+          const updateResponse = await fetch(`${API_URL}/api/data/${existingId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              table: 'user_preferences',
+              data: preferenceData,
+            }),
+          });
+          
+          if (!updateResponse.ok) {
+            throw new Error('Failed to update preferences');
+          }
+        } else {
+          // Create new preferences record
+          const createResponse = await fetch(`${API_URL}/api/data`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              table: 'user_preferences',
+              data: {
+                ...preferenceData,
+                created_at: new Date().toISOString(),
+              },
+            }),
+          });
+          
+          if (!createResponse.ok) {
+            throw new Error('Failed to create preferences');
+          }
+        }
+        
+        Alert.alert('Success', 'Your preferences have been saved!');
+      } catch (serverError) {
+        console.error('Failed to save to server:', serverError);
+        Alert.alert('Saved Locally', 'Your preferences have been saved locally. They will sync when connection is available.');
+      }
     } catch (error) {
       console.error('Failed to save preferences:', error);
       Alert.alert('Error', 'Failed to save your preferences');
@@ -140,6 +250,13 @@ export default function SettingsScreen({ navigation }: Props) {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* User ID Display */}
+        {userId && (
+          <View style={styles.section}>
+            <Text style={styles.sectionSubtitle}>User ID: {userId}</Text>
+          </View>
+        )}
+
         {/* Personality Style */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tell us about yourself</Text>
@@ -255,38 +372,44 @@ export default function SettingsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#000',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 50,
   },
   header: {
-    height: 60,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
   },
   backButton: {
-    padding: 10,
+    padding: 5,
   },
   backButtonText: {
+    color: '#4A90E2',
     fontSize: 16,
-    color: '#3498db',
-    fontWeight: '500',
   },
   pageTitle: {
-    fontSize: 20,
+    color: '#fff',
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#2c3e50',
   },
   saveButton: {
-    paddingHorizontal: 16,
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 15,
     paddingVertical: 8,
-    backgroundColor: '#3498db',
-    borderRadius: 8,
+    borderRadius: 6,
   },
   saveButtonText: {
-    color: 'white',
-    fontSize: 16,
+    color: '#fff',
+    fontSize: 14,
     fontWeight: '600',
   },
   content: {
@@ -294,52 +417,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   section: {
-    marginBottom: 32,
+    marginVertical: 20,
   },
   sectionTitle: {
+    color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
-    color: '#2c3e50',
+    fontWeight: 'bold',
     marginBottom: 8,
   },
   sectionSubtitle: {
+    color: '#999',
     fontSize: 14,
-    color: '#7f8c8d',
-    marginBottom: 16,
+    marginBottom: 15,
+    lineHeight: 20,
   },
   textInput: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#1a1a1a',
+    color: '#fff',
+    padding: 15,
+    borderRadius: 8,
     fontSize: 16,
-    color: '#2c3e50',
     borderWidth: 1,
-    borderColor: '#ecf0f1',
-    minHeight: 80,
+    borderColor: '#333',
+    minHeight: 100,
   },
   optionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
   },
   optionButton: {
+    backgroundColor: '#1a1a1a',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: 'white',
+    paddingVertical: 12,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#ecf0f1',
+    borderColor: '#333',
   },
   optionButtonSelected: {
-    backgroundColor: '#3498db',
-    borderColor: '#3498db',
+    backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
   },
   optionText: {
+    color: '#fff',
     fontSize: 14,
-    color: '#7f8c8d',
   },
   optionTextSelected: {
-    color: 'white',
+    color: '#fff',
+    fontWeight: '600',
   },
   goalsContainer: {
     flexDirection: 'row',
@@ -347,60 +472,50 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   goalChip: {
-    paddingHorizontal: 16,
+    backgroundColor: '#1a1a1a',
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: 'white',
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#ecf0f1',
+    borderColor: '#333',
   },
   goalChipSelected: {
-    backgroundColor: '#e8f5e8',
-    borderColor: '#27ae60',
+    backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
   },
   goalText: {
-    fontSize: 14,
-    color: '#7f8c8d',
+    color: '#fff',
+    fontSize: 12,
   },
   goalTextSelected: {
-    color: '#27ae60',
-    fontWeight: '500',
+    color: '#fff',
+    fontWeight: '600',
   },
   radioOption: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#ecf0f1',
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
   },
   radioOptionSelected: {
-    borderColor: '#3498db',
-    backgroundColor: '#f8fbff',
+    backgroundColor: 'rgba(74, 144, 226, 0.1)',
   },
   radioCircle: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#bdc3c7',
+    borderColor: '#666',
     marginRight: 12,
   },
   radioCircleSelected: {
-    borderColor: '#3498db',
-    backgroundColor: '#3498db',
+    backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
   },
   radioText: {
+    color: '#fff',
     fontSize: 16,
-    color: '#2c3e50',
-  },
-  loadingText: {
-    textAlign: 'center',
-    marginTop: 100,
-    fontSize: 16,
-    color: '#7f8c8d',
+    flex: 1,
   },
 });

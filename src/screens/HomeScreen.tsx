@@ -90,7 +90,7 @@ export default function HomeScreen({ navigation }: Props) {
       {/* Header with Settings */}
       <View style={styles.header}>
         <View style={styles.headerLeft} />
-        <Text style={styles.appTitle}>Genuconv</Text>
+        <Text style={styles.appTitle}>SpeakTrue</Text>
         <TouchableOpacity 
           style={styles.settingsButton}
           onPress={() => navigation.navigate('Settings')}

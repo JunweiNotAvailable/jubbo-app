@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../lib/types';
-import { apiService, ConversationSuggestion } from '../lib/api';
+import { AdviceModel } from '../lib/models';
 
 type AdvicesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Advices'>;
 type AdvicesScreenRouteProp = RouteProp<RootStackParamList, 'Advices'>;
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function AdvicesScreen({ navigation, route }: Props) {
-  const [suggestions, setSuggestions] = useState<ConversationSuggestion[]>([]);
+  const [advices, setAdvices] = useState<AdviceModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { recordingResult } = route.params || {};
 
@@ -27,47 +27,49 @@ export default function AdvicesScreen({ navigation, route }: Props) {
     setIsLoading(true);
     try {
       if (recordingResult) {
-        // Get AI-generated suggestions based on the recording
-        const aiSuggestions = await apiService.getSuggestions(recordingResult);
-        setSuggestions(aiSuggestions);
+        // TODO: Get AI-generated suggestions based on the recording
       } else {
         // Fallback to mock data if no recording
-        const mockSuggestions: ConversationSuggestion[] = [
-          {
+        const mockAdvice: AdviceModel = {
             id: '1',
-            phrases: ["I understand", "That makes sense", "I hear you"],
-            response: "I understand your perspective and appreciate you sharing that with me.",
-            mindset: "Empathetic, open-minded, and validating. Show genuine interest in understanding their viewpoint.",
-            timestamp: Date.now(),
-          },
-          {
-            id: '2',
-            phrases: ["Let me think about that", "That's interesting", "Can you tell me more?"],
-            response: "That's an interesting point. Can you help me understand more about your reasoning behind that?",
-            mindset: "Curious and thoughtful. Demonstrate active listening and genuine interest in learning more.",
-            timestamp: Date.now(),
-          },
-          {
-            id: '3',
-            phrases: ["I appreciate that", "Thank you for sharing", "That's valuable"],
-            response: "Thank you for sharing that insight with me. I really appreciate your honesty.",
-            mindset: "Grateful and respectful. Acknowledge the effort they put into communicating with you.",
-            timestamp: Date.now(),
-          },
-          {
-            id: '4',
-            phrases: ["Let's work together", "We can figure this out", "What if we tried"],
-            response: "Let's work together to find a solution that works for both of us. What if we tried approaching it from a different angle?",
-            mindset: "Collaborative and solution-focused. Frame challenges as shared problems to solve together.",
-            timestamp: Date.now(),
-          }
-        ];
-        setSuggestions(mockSuggestions);
+            user_id: '1',
+            audio_url: 'https://example.com/audio.mp3',
+            data: {
+              scenario: 'I understand',
+              context_summary: 'That makes sense',
+              user_intent: 'I hear you',
+              advice: {
+                full_responses: [{
+                  response: "I understand your perspective and appreciate you sharing that with me.",
+                  tone: "Empathetic",
+                  why: "Show genuine interest in understanding their viewpoint.",
+                }],
+                word_suggestions: [{
+                  instead_of: "I understand",
+                  use: "That makes sense",
+                  context: "When to use this",
+                }],
+                tone_guidance: {
+                  recommended_tone: "Empathetic",
+                  voice_tips: "Show genuine interest in understanding their viewpoint.",
+                  body_language: "Use body language to show genuine interest in understanding their viewpoint.",
+                },
+                conversation_strategy: {
+                  immediate_goal: "Find a solution that works for both of us.",
+                  long_term_approach: "Work together to find a solution that works for both of us.",
+                },
+              },
+              personalization_notes: "Show genuine interest in understanding their viewpoint.",
+            },
+            created_at: new Date().toISOString(),
+        };
+        setAdvices([mockAdvice]);
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Failed to load suggestions:', error);
       // Fallback to empty suggestions
-      setSuggestions([]);
+      setAdvices([]);
     } finally {
       setIsLoading(false);
     }
@@ -93,28 +95,28 @@ export default function AdvicesScreen({ navigation, route }: Props) {
         </View>
       ) : (
         <ScrollView style={styles.suggestionsContainer} showsVerticalScrollIndicator={false}>
-          {suggestions.length === 0 ? (
+          {advices.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No suggestions available at the moment.</Text>
             </View>
           ) : (
-            suggestions.map((suggestion) => (
-              <View key={suggestion.id} style={styles.suggestionCard}>
+            advices.map((advice) => (
+              <View key={advice.id} style={styles.suggestionCard}>
             <View style={styles.phrasesSection}>
               <Text style={styles.sectionTitle}>Quick Phrases:</Text>
-              {suggestion.phrases.map((phrase, index) => (
-                <Text key={index} style={styles.phrase}>• {phrase}</Text>
+              {advice.data.advice.full_responses.map((phrase, index) => (
+                <Text key={index} style={styles.phrase}>• {phrase.response}</Text>
               ))}
             </View>
             
             <View style={styles.responseSection}>
               <Text style={styles.sectionTitle}>Suggested Response:</Text>
-              <Text style={styles.response}>{suggestion.response}</Text>
+              <Text style={styles.response}>{advice.data.advice.full_responses[0].response}</Text>
             </View>
             
             <View style={styles.mindsetSection}>
               <Text style={styles.sectionTitle}>Mindset & Tone:</Text>
-              <Text style={styles.mindset}>{suggestion.mindset}</Text>
+              <Text style={styles.mindset}>{advice.data.advice.tone_guidance.recommended_tone}</Text>
                 </View>
               </View>
             ))
