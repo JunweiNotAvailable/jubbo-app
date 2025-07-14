@@ -6,17 +6,17 @@ export const API_URL = process.env.EXPO_PUBLIC_ENV === 'production' ? PROD_URL :
 export const CONFIG = {
   API_URL,
   ENDPOINTS: {
-    DATA: '/api/data',
-    AI: '/api/ai',
-    HEALTH: '/api/health',
+    DATA: '/data',
+    AI: '/ai',
+    HEALTH: '/health',
   },
   AI_ACTIONS: {
     ANALYZE_AUDIO: '/analyze-audio',
-    ANALYZE_TEXT: '/analyze-text', 
     TRANSCRIBE: '/transcribe',
     ADVICE: '/advice',
   },
   TABLES: {
     USERS: 'users',
+    ADVICES: 'advices',
   },
 }; 
