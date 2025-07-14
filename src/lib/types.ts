@@ -1,7 +1,11 @@
 import { RecordingResult } from './audio';
+import { AdviceModel } from './models';
 
 export type RootStackParamList = {
   Home: undefined;
-  Advices: { recordingResult?: RecordingResult };
+  Advices: { 
+    result?: RecordingResult;
+    advice?: AdviceModel;
+  };
   Settings: undefined;
 };

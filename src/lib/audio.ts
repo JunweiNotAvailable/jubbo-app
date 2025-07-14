@@ -1,5 +1,4 @@
-import { AudioRecorder, setAudioModeAsync, requestRecordingPermissionsAsync } from 'expo-audio';
-import { AudioQuality, IOSOutputFormat } from 'expo-audio';
+import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 
 export interface RecordingResult {
@@ -8,65 +7,81 @@ export interface RecordingResult {
 }
 
 class AudioService {
-  private recording: AudioRecorder | null = null;
+  private recording: Audio.Recording | null = null;
   private isRecording = false;
 
-  async requestPermissions(): Promise<boolean> {
+  async requestPermissions(): Promise<{ granted: boolean; message: string }> {
     try {
-      const { status } = await requestRecordingPermissionsAsync();
-      return status === 'granted';
+      console.log('Requesting audio recording permissions...');
+      const permissionResponse = await Audio.requestPermissionsAsync();
+      
+      console.log('Permission response:', permissionResponse);
+      
+      if (permissionResponse.status === 'granted') {
+        return { granted: true, message: 'Permission granted' };
+      } else if (permissionResponse.status === 'denied') {
+        return { 
+          granted: false, 
+          message: 'Microphone permission was denied. Please enable it in your device settings.' 
+        };
+      } else if (permissionResponse.status === 'undetermined') {
+        return { 
+          granted: false, 
+          message: 'Microphone permission is undetermined. Please try again.' 
+        };
+      } else {
+        return { 
+          granted: false, 
+          message: `Unknown permission status: ${permissionResponse.status}` 
+        };
+      }
     } catch (error) {
       console.error('Failed to request audio permissions:', error);
-      return false;
+      return { 
+        granted: false, 
+        message: `Permission request failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      };
     }
   }
 
-  async startRecording(): Promise<boolean> {
+  async startRecording(): Promise<{ success: boolean; message: string }> {
     try {
+      console.log('Starting recording process...');
+      
       // Request permissions first
-      const hasPermission = await this.requestPermissions();
-      if (!hasPermission) {
-        throw new Error('Audio recording permission not granted');
+      const permissionResult = await this.requestPermissions();
+      if (!permissionResult.granted) {
+        return { success: false, message: permissionResult.message };
       }
 
+      console.log('Permissions granted, configuring audio mode...');
+
       // Configure audio mode for recording
-      await setAudioModeAsync({
-        allowsRecording: true,
-        playsInSilentMode: true,
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
       });
 
-      // Create new recording with options
-      const recordingOptions = {
-        extension: '.m4a',
-        sampleRate: 44100,
-        numberOfChannels: 2,
-        bitRate: 128000,
-        isMeteringEnabled: true,
-        android: {
-          outputFormat: 'mpeg4' as const,
-          audioEncoder: 'aac' as const,
-        },
-        ios: {
-          outputFormat: IOSOutputFormat.MPEG4AAC,
-          audioQuality: AudioQuality.HIGH,
-          linearPCMBitDepth: 16,
-          linearPCMIsBigEndian: false,
-          linearPCMIsFloat: false,
-        },
-        web: {
-          mimeType: 'audio/webm',
-          bitsPerSecond: 128000,
-        },
-      };
+      console.log('Audio mode configured, creating recording...');
 
-      this.recording = new AudioRecorder(recordingOptions);
-      await this.recording.prepareToRecordAsync();
-      this.recording.record();
+      // Create and configure recording
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+
+      this.recording = recording;
       this.isRecording = true;
-      return true;
+      
+      console.log('Recording started successfully');
+      return { success: true, message: 'Recording started successfully' };
     } catch (error) {
       console.error('Failed to start recording:', error);
-      return false;
+      this.isRecording = false;
+      this.recording = null;
+      return { 
+        success: false, 
+        message: `Failed to start recording: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      };
     }
   }
 
@@ -76,22 +91,25 @@ class AudioService {
         return null;
       }
 
-      await this.recording.stop();
-      const uri = this.recording.uri;
-      const status = this.recording.getStatus();
+      console.log('Stopping recording...');
+      await this.recording.stopAndUnloadAsync();
+      
+      const uri = this.recording.getURI();
+      const status = await this.recording.getStatusAsync();
       
       this.isRecording = false;
       this.recording = null;
 
       // Reset audio mode
-      await setAudioModeAsync({
-        allowsRecording: false,
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
       });
 
       if (!uri) {
         throw new Error('Recording URI is null');
       }
 
+      console.log('Recording stopped successfully');
       return {
         uri,
         duration: status.durationMillis || 0,
