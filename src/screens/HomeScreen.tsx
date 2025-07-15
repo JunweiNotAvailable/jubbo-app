@@ -9,6 +9,10 @@ import { Config } from '../lib/config';
 import { generateId } from '../lib/functions';
 import { AdviceModel, AdviceData } from '../lib/models';
 import Header from '../components/Header';
+import { Ionicons } from '@expo/vector-icons';
+import { APP_NAME, Colors } from '../lib/constants';
+import Loader from '../components/Loader';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -18,11 +22,12 @@ interface Props {
 
 export default function HomeScreen({ navigation }: Props) {
   const { user } = useAppContext();
-  const [isListening, setIsListening] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingStatus, setProcessingStatus] = useState('');
   const [recordingResult, setRecordingResult] = useState<RecordingResult | null>(null);
   const [pulseAnimation] = useState(new Animated.Value(1));
+  const [selectedModel, setSelectedModel] = useState<string>('gemini');
+
+  const [isListening, setIsListening] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (isListening) {
@@ -32,11 +37,26 @@ export default function HomeScreen({ navigation }: Props) {
     }
   }, [isListening]);
 
+  useEffect(() => {
+    const loadModel = async () => {
+      try {
+        const settings = await AsyncStorage.getItem('customization');
+        if (settings) {
+          const { selectedModel } = JSON.parse(settings);
+          setSelectedModel(selectedModel || 'gemini-2.0-flash-exp');
+        }
+      } catch (error) {
+        console.error('Error loading model setting:', error);
+      }
+    };
+    loadModel();
+  }, []);
+
   const startPulseAnimation = () => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnimation, {
-          toValue: 1.2,
+          toValue: 1.05,
           duration: 800,
           useNativeDriver: true,
         }),
@@ -101,7 +121,6 @@ export default function HomeScreen({ navigation }: Props) {
     try {
       setIsListening(false);
       setIsProcessing(true);
-      setProcessingStatus('Stopping recording...');
       
       // Step 1: Stop recording and get audio file
       const result = await audioService.stopRecording();
@@ -111,7 +130,6 @@ export default function HomeScreen({ navigation }: Props) {
       }
       
       setRecordingResult(result);
-      setProcessingStatus('Preparing audio for analysis...');
       
       // Step 2: Prepare audio file for upload
       const formData = new FormData();
@@ -131,12 +149,15 @@ export default function HomeScreen({ navigation }: Props) {
       };
       formData.append('context', JSON.stringify(context));
       
+      // Add selected AI model
+      formData.append('model', selectedModel);
+      
       // Step 3: Send audio to server for complete analysis (transcription + advice)
-      setProcessingStatus('Analyzing speech and generating advice...');
       console.log('Sending audio to server for analysis...');
+      console.log('Using AI model:', selectedModel);
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout for AI processing
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for AI processing
       
       try {
         const response = await fetch(`${Config.apiUrl}/api/ai/analyze-audio`, {
@@ -162,7 +183,6 @@ export default function HomeScreen({ navigation }: Props) {
         }
         
         console.log('Analysis completed successfully');
-        setProcessingStatus('Saving advice...');
         
         // Step 4: Create complete AdviceModel
         const adviceModel: AdviceModel = {
@@ -173,37 +193,33 @@ export default function HomeScreen({ navigation }: Props) {
           data: analysisData.data.advice as AdviceData,
         };
         
-        // Step 5: Save advice to database
-        if (user?.id) {
-          try {
-            console.log('Saving advice to database...');
-            
-            const saveResponse = await fetch(`${Config.apiUrl}/api/data/advices`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(adviceModel),
-            });
-            
-            if (saveResponse.ok) {
-              console.log('Advice saved to database successfully');
-            } else {
-              console.warn('Failed to save advice to database, but continuing...');
-            }
-          } catch (saveError) {
-            console.error('Error saving advice to database:', saveError);
-            // Continue anyway, user can still see the advice
-          }
-        }
-        
-        setProcessingStatus('Complete!');
-        
-        // Step 6: Navigate to advice screen with the complete AdviceModel
+        // Step 5: Navigate to advice screen immediately for better UX
         navigation.navigate('Advices', { 
           result: result,
           advice: adviceModel,
         });
+        
+        // Step 6: Save advice to database in background (non-blocking)
+        if (user?.id) {
+          // Fire and forget - save to database without blocking UI
+          fetch(`${Config.apiUrl}/api/data/advices`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(adviceModel),
+          })
+          .then(saveResponse => {
+            if (saveResponse.ok) {
+              console.log('Advice saved to database successfully');
+            } else {
+              console.warn('Failed to save advice to database');
+            }
+          })
+          .catch(saveError => {
+            console.error('Error saving advice to database:', saveError);
+          });
+        }
         
       } catch (fetchError) {
         clearTimeout(timeoutId);
@@ -255,7 +271,6 @@ export default function HomeScreen({ navigation }: Props) {
       );
     } finally {
       setIsProcessing(false);
-      setProcessingStatus('');
       setRecordingResult(null);
     }
   };
@@ -265,28 +280,15 @@ export default function HomeScreen({ navigation }: Props) {
       <StatusBar style="auto" />
       
       <Header 
-        title="SpeakTrue" 
-        onBackPress={() => navigation.goBack()}
+        title={APP_NAME} 
+        titleStyle={{ color: '#fff' }}
         rightComponent={
           <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-            <Text>⚙️</Text>
+            <Ionicons name="person-circle-outline" size={28} color={'#fff'} />
           </TouchableOpacity>
         }
         showBackButton={false}
       />
-
-      {/* Status Label */}
-      <View style={styles.statusContainer}>
-        {isListening && (
-          <Text style={styles.statusText}>Listening…</Text>
-        )}
-        {isProcessing && (
-          <Text style={styles.statusText}>{processingStatus || 'Processing…'}</Text>
-        )}
-        {!isListening && !isProcessing && user && (
-          <Text style={styles.welcomeText}>Welcome, {user.name}!</Text>
-        )}
-      </View>
 
       {/* Main Content - Centered Button */}
       <View style={styles.mainContent}>
@@ -305,21 +307,13 @@ export default function HomeScreen({ navigation }: Props) {
             onPress={isListening ? handleProcessAudio : handleListen}
             disabled={isProcessing}
           >
-            <Text style={[styles.buttonText, isListening && styles.buttonTextActive]}>
-              {isProcessing ? 'Processing...' : isListening ? 'Stop & Analyze' : 'Start Listening'}
+            {isProcessing && <View style={{ marginBottom: 10 }}><Loader color='#fffa' size={20} /></View>}
+            <Text style={[styles.buttonText, (isListening || isProcessing) && styles.buttonTextActive]}>
+              {isProcessing ? 'Thinking...' : isListening ? 'Listening...' : 'Tap to Listen'}
             </Text>
           </TouchableOpacity>
         </Animated.View>
         
-        {/* Instruction Text */}
-        <Text style={styles.instructionText}>
-          {isListening 
-            ? 'Speak naturally, then tap to stop and get advice'
-            : isProcessing 
-            ? 'Analyzing your conversation...'
-            : 'Tap to start recording your conversation'
-          }
-        </Text>
       </View>
     </SafeAreaView>
   );
@@ -328,7 +322,7 @@ export default function HomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: Colors.primary,
   },
   header: {
     height: 60,
@@ -377,11 +371,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listeningButton: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: '#3498db',
-    shadowColor: '#000',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: '#fff4',
+    borderWidth: 4,
+    borderColor: Colors.primary + '44',
+    shadowColor: '#fff',
     shadowOffset: {
       width: 0,
       height: 4,
@@ -395,22 +391,22 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 90,
+    borderRadius: 120,
   },
   listeningButtonActive: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: '#fff3',
   },
   listeningButtonProcessing: {
-    backgroundColor: '#f39c12',
+    backgroundColor: '#fff2',
   },
   buttonText: {
     color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '700',
     textAlign: 'center',
   },
   buttonTextActive: {
-    color: 'white',
+    color: '#fffa',
   },
   instructionText: {
     marginTop: 30,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, StyleProp, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../lib/constants';
 
@@ -8,13 +8,15 @@ interface HeaderProps {
   onBackPress?: () => void;
   rightComponent?: React.ReactNode;
   showBackButton?: boolean;
+  titleStyle?: StyleProp<TextStyle>;
 }
 
 export default function Header({ 
   title, 
   onBackPress, 
   rightComponent, 
-  showBackButton = true 
+  showBackButton = true,
+  titleStyle
 }: HeaderProps) {
   return (
     <View style={styles.header}>
@@ -30,7 +32,7 @@ export default function Header({
       </View>
 
       {/* Center - Title */}
-      <Text style={styles.title}>{title}</Text>
+      <Text style={[styles.title, titleStyle]}>{title}</Text>
 
       {/* Right side - Custom component or spacer */}
       <View style={styles.headerRight}>

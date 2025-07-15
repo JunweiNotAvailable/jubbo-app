@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../lib/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../lib/config';
 import Header from '../components/Header';
 import { Colors } from '../lib/constants';
 import Loader from '../components/Loader';
+import { useAppContext } from '../contexts/AppContext';
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Settings'>;
 
@@ -17,20 +17,32 @@ interface Props {
 
 export default function SettingsScreen({ navigation }: Props) {
 
+  const { user } = useAppContext();
+
   const [personality, setPersonality] = useState<string>('');
   const [aboutConversation, setAboutConversation] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>('gemini');
+  const [isModelModalVisible, setIsModelModalVisible] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
+  const aiModels = [
+    { id: 'gemini', name: 'Gemini 2.0 Flash', description: 'Google - Fast and efficient' },
+    { id: 'openai', name: 'GPT-4.1 Nano', description: 'OpenAI - Quick and versatile' },
+    { id: 'claude', name: 'Claude 3.5 Haiku', description: 'Anthropic - Precise and thoughtful' },
+    { id: 'llama', name: 'Llama 4 Scout', description: 'Meta via Groq - Lightning fast' },
+  ];
+
   useEffect(() => {
     const loadSettings = async () => {
       const settings = await AsyncStorage.getItem('customization');
       if (settings) {
-        const { personality, aboutConversation } = JSON.parse(settings);
-        setPersonality(personality);
-        setAboutConversation(aboutConversation);
+        const { personality, aboutConversation, selectedModel } = JSON.parse(settings);
+        setPersonality(personality || '');
+        setAboutConversation(aboutConversation || '');
+        setSelectedModel(selectedModel || 'gemini');
       }
       setIsLoading(false);
     }
@@ -40,7 +52,11 @@ export default function SettingsScreen({ navigation }: Props) {
   const saveSettings = async () => {
     setIsSaving(true);
     try {
-      await AsyncStorage.setItem('customization', JSON.stringify({ personality, aboutConversation }));
+      await AsyncStorage.setItem('customization', JSON.stringify({ 
+        personality, 
+        aboutConversation, 
+        selectedModel 
+      }));
       navigation.goBack();
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -62,8 +78,8 @@ export default function SettingsScreen({ navigation }: Props) {
   }
 
   const saveButton = (
-    <TouchableOpacity 
-      style={styles.saveButton} 
+    <TouchableOpacity
+      style={styles.saveButton}
       onPress={saveSettings}
       disabled={isSaving}
     >
@@ -74,9 +90,9 @@ export default function SettingsScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
-      
-      <Header 
-        title="Settings" 
+
+      <Header
+        title="Settings"
         onBackPress={() => navigation.goBack()}
         rightComponent={saveButton}
       />
@@ -93,7 +109,7 @@ export default function SettingsScreen({ navigation }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tell us about yourself</Text>
           <Text style={styles.sectionSubtitle}>
-            Help us understand your communication style and personality
+            Hi, {user?.name}! Help us understand your communication style and personality
           </Text>
           <TextInput
             style={styles.textInput}
@@ -122,7 +138,28 @@ export default function SettingsScreen({ navigation }: Props) {
             textAlignVertical="top"
           />
         </View>
-        
+
+        {/* AI Model Selection */}
+        {/* <View style={styles.section}>
+          <Text style={styles.sectionTitle}>AI Model</Text>
+          <Text style={styles.sectionSubtitle}>
+            Choose which AI model to use for conversation advice
+          </Text>
+          <TouchableOpacity
+            style={styles.modelSelector}
+            onPress={() => setIsModelModalVisible(true)}
+          >
+            <View style={styles.modelSelectorContent}>
+              <View style={styles.modelSelectorLeft}>
+                <Text style={styles.modelSelectorTitle}>
+                  {aiModels.find(m => m.id === selectedModel)?.name || 'Select Model'}
+                </Text>
+              </View>
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            </View>
+          </TouchableOpacity>
+        </View> */}
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -184,5 +221,89 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     minHeight: 120,
   },
-  
+  modelSelector: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    padding: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modelSelectorContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modelSelectorLeft: {
+    flex: 1,
+  },
+  modelSelectorTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#34495e',
+    marginBottom: 2,
+  },
+  modelSelectorDescription: {
+    fontSize: 12,
+    color: '#7f8c8d',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    width: '80%',
+    maxHeight: '70%',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#34495e',
+  },
+  modalCloseButton: {
+    padding: 5,
+  },
+  modelOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modelOptionSelected: {
+    backgroundColor: '#f0f9eb', // Light green background for selected option
+    borderColor: Colors.primary,
+    borderWidth: 1,
+  },
+  modelOptionContent: {
+    flex: 1,
+  },
+  modelOptionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#34495e',
+  },
+  modelOptionTitleSelected: {
+    color: Colors.primary,
+  },
 });

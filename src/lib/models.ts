@@ -19,8 +19,15 @@ export interface AdviceModel {
 }
 
 export interface AdviceData {
-  responses: {
-    response: string;
-    why: string;
-  }[];
+  response: {
+    positive: Response,
+    questioning: Response,
+    pushback: Response,
+    redirect: Response,
+  };
+}
+
+interface Response {
+  response: string;
+  why: string;
 }

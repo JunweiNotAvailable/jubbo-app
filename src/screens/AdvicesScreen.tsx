@@ -49,9 +49,9 @@ export default function AdvicesScreen({ navigation, route }: Props) {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Section 1: Full Response (Single Card) */}
-        {data.responses.map((response, index) => (
+        {Object.entries(data.response).map(([tone, response], index) => (
           <View key={index} style={styles.section}>
-            <Text style={styles.sectionTitle}>Response {index + 1}</Text>
+            <Text style={styles.sectionTitle}>{tone}</Text>
             <View style={styles.responseCard}>
               <Text style={styles.responseText}>
                 {response.response || 'No response available'}
@@ -85,6 +85,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
+    textTransform: 'capitalize',
   },
 
   // Response Card (Section 1)

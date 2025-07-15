@@ -19,7 +19,7 @@ export default function App() {
         >
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="Advices" component={AdvicesScreen} />
-          <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} options={{ presentation: 'modal' }} />
         </Stack.Navigator>
       </NavigationContainer>
     </AppProvider>
