@@ -37,16 +37,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   }, []);
 
   const getTempUser = async () => {
-    const id = await AsyncStorage.getItem('user_id');
+    const username = await AsyncStorage.getItem('username');
     const user: UserModel = {
-      id: id || generateId(),
-      name: 'Junwei',
-      email: 'junwei@speaktruevision.com',
+      id: '',
+      name: username || '',
+      email: '',
       created_at: new Date().toISOString(),
     };
-    if (!id) {
-      await AsyncStorage.setItem('user_id', user.id);
-    }
     return user;
   }
 

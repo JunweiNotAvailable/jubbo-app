@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { APP_NAME, Colors, FONTS } from '../lib/constants';
 import Loader from '../components/Loader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import TempNameScreen from './TempNameScreen';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -274,6 +275,10 @@ export default function HomeScreen({ navigation }: Props) {
       setRecordingResult(null);
     }
   };
+
+  if (!user?.name) {
+    return <TempNameScreen />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
