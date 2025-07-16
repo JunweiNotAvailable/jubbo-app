@@ -203,7 +203,7 @@ export default function HomeScreen({ navigation }: Props) {
         });
         
         // Step 6: Save advice to database in background (non-blocking)
-        if (user?.id) {
+        if (user) {
           // Fire and forget - save to database without blocking UI
           fetch(`${Config.apiUrl}/api/data/advices`, {
             method: 'POST',
