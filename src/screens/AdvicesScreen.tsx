@@ -1,13 +1,14 @@
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../lib/types';
 import Header from '../components/Header';
 import { FONTS } from '../lib/constants';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-type AdvicesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Advices'>;
+type AdvicesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Advices'>;
 type AdvicesScreenRouteProp = RouteProp<RootStackParamList, 'Advices'>;
 
 interface Props {

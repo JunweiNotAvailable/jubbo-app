@@ -15,8 +15,10 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "This app needs access to the microphone to record conversations for analysis and provide communication advice."
-      }
+        "NSMicrophoneUsageDescription": "This app needs access to the microphone to record conversations for analysis and provide communication advice.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.junweialreadyexist.Jubbo"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,11 +27,9 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       [
@@ -39,6 +39,11 @@
         }
       ],
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ac955645-66fd-417f-a278-04c1590b6f93"
+      }
+    }
   }
 }

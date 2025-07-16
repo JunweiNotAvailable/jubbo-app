@@ -1,15 +1,15 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './src/lib/types';
 import { HomeScreen, AdvicesScreen, SettingsScreen } from './src/screens';
 import { AppProvider } from './src/contexts/AppContext';
 import { useNunitoFonts } from './src/lib/fonts';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 import Loader from './src/components/Loader';
 import { Colors } from './src/lib/constants';
 
-const Stack = createStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   const fontsLoaded = useNunitoFonts();

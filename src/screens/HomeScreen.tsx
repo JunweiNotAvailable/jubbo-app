@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Alert, Animated } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Animated, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../lib/types';
 import { audioService, RecordingResult } from '../lib/audio';
 import { useAppContext } from '../contexts/AppContext';
@@ -14,8 +14,9 @@ import { APP_NAME, Colors, FONTS } from '../lib/constants';
 import Loader from '../components/Loader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import TempNameScreen from './TempNameScreen';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 interface Props {
   navigation: HomeScreenNavigationProp;
@@ -122,6 +123,7 @@ export default function HomeScreen({ navigation }: Props) {
     try {
       setIsListening(false);
       setIsProcessing(true);
+      console.log(Config.apiUrl);
       
       // Step 1: Stop recording and get audio file
       const result = await audioService.stopRecording();
@@ -307,12 +309,18 @@ export default function HomeScreen({ navigation }: Props) {
             },
           ]}
         >
+          <View style={[styles.iconContainer]}>
+            <Image
+              source={require('../../assets/logo-white.png')}
+              style={[styles.icon]}
+            />
+          </View>
           <TouchableOpacity 
             style={styles.buttonTouchable}
             onPress={isListening ? handleProcessAudio : handleListen}
             disabled={isProcessing}
           >
-            {isProcessing && <View style={{ marginBottom: 10 }}><Loader color='#fffa' size={20} /></View>}
+            {isProcessing && <View style={{ marginBottom: 10 }}><Loader color='#fffc' size={24} strokeWidth={3} /></View>}
             <Text style={[styles.buttonText, (isListening || isProcessing) && styles.buttonTextActive]}>
               {isProcessing ? 'Thinking...' : isListening ? 'Listening...' : 'Tap to Listen'}
             </Text>
@@ -420,5 +428,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 40,
     lineHeight: 22,
+  },
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+    opacity: 0.2,
+  },
+  icon: {
+    width: 100,
+    height: 100,
   },
 }); 
