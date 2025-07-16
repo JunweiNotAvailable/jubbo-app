@@ -286,7 +286,7 @@ export default function HomeScreen({ navigation }: Props) {
       
       <Header 
         title={APP_NAME} 
-        titleStyle={{ color: '#fff' }}
+        titleStyle={{ color: '#fff', fontSize: 28, fontFamily: FONTS.black }}
         rightComponent={
           <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
             <Ionicons name="person-circle-outline" size={28} color={'#fff'} />
