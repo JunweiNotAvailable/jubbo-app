@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../lib/types';
@@ -8,6 +8,9 @@ import Header from '../components/Header';
 import { Colors } from '../lib/constants';
 import Loader from '../components/Loader';
 import { useAppContext } from '../contexts/AppContext';
+import Input from '../components/Input';
+import Select from '../components/Select';
+
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Settings'>;
 
@@ -22,17 +25,15 @@ export default function SettingsScreen({ navigation }: Props) {
   const [personality, setPersonality] = useState<string>('');
   const [aboutConversation, setAboutConversation] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('gemini');
-  const [isModelModalVisible, setIsModelModalVisible] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
   const aiModels = [
-    { id: 'gemini', name: 'Gemini 2.0 Flash', description: 'Google - Fast and efficient' },
-    { id: 'openai', name: 'GPT-4.1 Nano', description: 'OpenAI - Quick and versatile' },
-    { id: 'claude', name: 'Claude 3.5 Haiku', description: 'Anthropic - Precise and thoughtful' },
-    { id: 'llama', name: 'Llama 4 Scout', description: 'Meta via Groq - Lightning fast' },
+    { id: 'gemini', name: 'Gemini 2.0 Flash' },
+    { id: 'llama', name: 'Llama 4 Scout' },
+    { id: 'openai', name: 'GPT-4.1 Nano' },
+    { id: 'claude', name: 'Claude 3.5 Haiku' },
   ];
 
   useEffect(() => {
@@ -98,12 +99,6 @@ export default function SettingsScreen({ navigation }: Props) {
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* User ID Display */}
-        {userId && (
-          <View style={styles.section}>
-            <Text style={styles.sectionSubtitle}>User ID: {userId}</Text>
-          </View>
-        )}
 
         {/* Personality Style */}
         <View style={styles.section}>
@@ -111,14 +106,14 @@ export default function SettingsScreen({ navigation }: Props) {
           <Text style={styles.sectionSubtitle}>
             Hi, {user?.name}! Help us understand your communication style and personality
           </Text>
-          <TextInput
-            style={styles.textInput}
+          <Input
             placeholder="Describe your personality and communication preferences..."
             value={personality}
-            onChangeText={(text) => setPersonality(text)}
+            onChangeText={(text: string) => setPersonality(text)}
             multiline
             numberOfLines={6}
             textAlignVertical="top"
+            style={{ minHeight: 100 }}
           />
         </View>
 
@@ -128,37 +123,27 @@ export default function SettingsScreen({ navigation }: Props) {
           <Text style={styles.sectionSubtitle}>
             Help us understand more about the conversation
           </Text>
-          <TextInput
-            style={styles.textInput}
+          <Input
             placeholder="Describe the conversation you're having"
             value={aboutConversation}
-            onChangeText={(text) => setAboutConversation(text)}
+            onChangeText={(text: string) => setAboutConversation(text)}
             multiline
             numberOfLines={6}
             textAlignVertical="top"
+            style={{ minHeight: 100 }}
           />
         </View>
 
         {/* AI Model Selection */}
-        {/* <View style={styles.section}>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>AI Model</Text>
-          <Text style={styles.sectionSubtitle}>
-            Choose which AI model to use for conversation advice
-          </Text>
-          <TouchableOpacity
-            style={styles.modelSelector}
-            onPress={() => setIsModelModalVisible(true)}
-          >
-            <View style={styles.modelSelectorContent}>
-              <View style={styles.modelSelectorLeft}>
-                <Text style={styles.modelSelectorTitle}>
-                  {aiModels.find(m => m.id === selectedModel)?.name || 'Select Model'}
-                </Text>
-              </View>
-              <Ionicons name="chevron-down" size={20} color="#666" />
-            </View>
-          </TouchableOpacity>
-        </View> */}
+          <Select
+            placeholder="Select AI Model"
+            value={selectedModel}
+            options={aiModels}
+            onSelect={setSelectedModel}
+          />
+        </View>
 
       </ScrollView>
     </SafeAreaView>
@@ -210,100 +195,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     lineHeight: 18,
   },
-  textInput: {
-    backgroundColor: '#fff',
-    color: '#34495e',
-    padding: 10,
-    paddingVertical: 8,
-    borderRadius: 8,
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    minHeight: 120,
-  },
-  modelSelector: {
+
+  pickerContainer: {
     backgroundColor: '#fff',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
-    padding: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    marginVertical: 5,
   },
-  modelSelectorContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  modelSelectorLeft: {
-    flex: 1,
-  },
-  modelSelectorTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+  picker: {
+    height: 120,
+    width: '100%',
     color: '#34495e',
-    marginBottom: 2,
-  },
-  modelSelectorDescription: {
-    fontSize: 12,
-    color: '#7f8c8d',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    width: '80%',
-    maxHeight: '70%',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#34495e',
-  },
-  modalCloseButton: {
-    padding: 5,
-  },
-  modelOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  modelOptionSelected: {
-    backgroundColor: '#f0f9eb', // Light green background for selected option
-    borderColor: Colors.primary,
-    borderWidth: 1,
-  },
-  modelOptionContent: {
-    flex: 1,
-  },
-  modelOptionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#34495e',
-  },
-  modelOptionTitleSelected: {
-    color: Colors.primary,
   },
 });
