@@ -200,27 +200,27 @@ export default function HomeScreen({ navigation }: Props) {
           advice: adviceModel,
         });
         
-        // Step 6: Save advice to database in background (non-blocking)
-        if (user?.id) {
-          // Fire and forget - save to database without blocking UI
-          fetch(`${Config.apiUrl}/api/data/advices`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(adviceModel),
-          })
-          .then(saveResponse => {
-            if (saveResponse.ok) {
-              console.log('Advice saved to database successfully');
-            } else {
-              console.warn('Failed to save advice to database');
-            }
-          })
-          .catch(saveError => {
-            console.error('Error saving advice to database:', saveError);
-          });
-        }
+        // // Step 6: Save advice to database in background (non-blocking)
+        // if (user?.id) {
+        //   // Fire and forget - save to database without blocking UI
+        //   fetch(`${Config.apiUrl}/api/data/advices`, {
+        //     method: 'POST',
+        //     headers: {
+        //       'Content-Type': 'application/json',
+        //     },
+        //     body: JSON.stringify(adviceModel),
+        //   })
+        //   .then(saveResponse => {
+        //     if (saveResponse.ok) {
+        //       console.log('Advice saved to database successfully');
+        //     } else {
+        //       console.warn('Failed to save advice to database');
+        //     }
+        //   })
+        //   .catch(saveError => {
+        //     console.error('Error saving advice to database:', saveError);
+        //   });
+        // }
         
       } catch (fetchError) {
         clearTimeout(timeoutId);
