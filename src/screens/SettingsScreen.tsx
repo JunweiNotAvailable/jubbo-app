@@ -5,7 +5,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../lib/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
-import { Colors } from '../lib/constants';
+import { Colors, FONTS } from '../lib/constants';
 import Loader from '../components/Loader';
 import { useAppContext } from '../contexts/AppContext';
 import Input from '../components/Input';
@@ -33,7 +33,6 @@ export default function SettingsScreen({ navigation }: Props) {
     { id: 'gemini', name: 'Gemini 2.0 Flash' },
     { id: 'llama', name: 'Llama 4 Scout' },
     { id: 'openai', name: 'GPT-4.1 Nano' },
-    { id: 'claude', name: 'Claude 3.5 Haiku' },
   ];
 
   useEffect(() => {
@@ -138,7 +137,6 @@ export default function SettingsScreen({ navigation }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>AI Model</Text>
           <Select
-            placeholder="Select AI Model"
             value={selectedModel}
             options={aiModels}
             onSelect={setSelectedModel}
@@ -158,6 +156,7 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#7f8c8d',
     fontSize: 16,
+    fontFamily: FONTS.regular,
     textAlign: 'center',
   },
   loadingContainer: {
@@ -173,7 +172,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: Colors.primary,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: FONTS.semiBold,
   },
   content: {
     flex: 1,
@@ -188,10 +187,12 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
     marginBottom: 5,
     marginTop: 10,
+    fontFamily: FONTS.semiBold,
   },
   sectionSubtitle: {
     color: '#7f8c8d',
     fontSize: 14,
+    fontFamily: FONTS.regular,
     marginBottom: 10,
     lineHeight: 18,
   },

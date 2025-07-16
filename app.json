@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "SpeakTrue",
-    "slug": "SpeakTrue",
+    "name": "Jubbo",
+    "slug": "Jubbo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -37,7 +37,8 @@
         {
           "microphonePermission": "This app needs access to the microphone to record conversations for analysis and provide communication advice."
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

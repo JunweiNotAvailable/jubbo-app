@@ -1,4 +1,4 @@
-# SpeakTrue Vision - Real-Time Communication Assistant
+# Jubbo - Real-Time Communication Assistant
 
 > **Make communication better**
 

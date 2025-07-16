@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, StyleProp, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../lib/constants';
+import { Colors, FONTS } from '../lib/constants';
 
 interface HeaderProps {
   title: string;
@@ -67,8 +67,9 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 2,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     textAlign: 'center',
+    fontFamily: FONTS.bold,
   },
 }); 

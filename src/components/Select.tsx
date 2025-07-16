@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { Colors } from '../lib/constants';
+import { Colors, FONTS } from '../lib/constants';
 
 interface SelectOption {
   id: string;
@@ -114,13 +114,13 @@ const Select: React.FC<SelectProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 8,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
     color: '#2c3e50',
     marginBottom: 6,
+    fontFamily: FONTS.medium,
   },
   selector: {
     backgroundColor: '#fff',
@@ -148,16 +148,17 @@ const styles = StyleSheet.create({
   },
   selectorTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.semiBold,
     color: '#34495e',
     marginBottom: 2,
   },
   selectorPlaceholder: {
-    color: '#999',
-    fontWeight: '400',
+    color: '#aaa',
+    fontFamily: FONTS.regular,
   },
   selectorDescription: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
     color: '#7f8c8d',
   },
   modalBlurView: {
@@ -176,16 +177,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fffc',
     borderRadius: 20,
     width: '85%',
     maxHeight: '70%',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
     overflow: 'hidden',
+    backgroundColor: '#fff',
   },
   option: {
     flexDirection: 'row',
@@ -193,22 +189,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     paddingHorizontal: 16,
+    backgroundColor: '#fffc',
   },
   optionContent: {
     flex: 1,
   },
   optionTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: FONTS.semiBold,
     color: '#34495e',
   },
   optionTitleSelected: {
     color: Colors.primary,
-  },
-  optionDescription: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    marginTop: 2,
+    fontFamily: FONTS.bold,
   },
   optionSeparator: {
     height: 1,

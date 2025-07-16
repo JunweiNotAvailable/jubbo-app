@@ -1,5 +1,6 @@
 import { View, Animated, Easing } from 'react-native'
 import React, { useEffect, useRef } from 'react'
+import Svg, { Circle } from 'react-native-svg'
 import { Colors } from '../lib/constants'
 
 interface LoaderProps {
@@ -33,6 +34,11 @@ const Loader: React.FC<LoaderProps> = ({
     outputRange: ['0deg', '360deg'],
   })
 
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const strokeDasharray = circumference
+  const strokeDashoffset = circumference * 0.25 // Shows 75% of the circle
+
   return (
     <View style={{ 
       width: size, 
@@ -42,15 +48,23 @@ const Loader: React.FC<LoaderProps> = ({
     }}>
       <Animated.View
         style={{
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          borderWidth: strokeWidth,
-          borderColor: color,
-          borderTopColor: 'transparent',
           transform: [{ rotate: spin }],
         }}
-      />
+      >
+        <Svg width={size} height={size}>
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeDasharray={strokeDasharray}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            fill="none"
+          />
+        </Svg>
+      </Animated.View>
     </View>
   )
 }

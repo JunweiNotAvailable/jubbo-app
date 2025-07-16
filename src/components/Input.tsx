@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, TextInput, TextInputProps, View, Text } from 'react-native';
+import { FONTS } from '../lib/constants';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -49,6 +50,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     borderWidth: 1,
     borderColor: '#ddd',
+    fontFamily: FONTS.regular,
   },
   inputError: {
     borderColor: '#e74c3c',

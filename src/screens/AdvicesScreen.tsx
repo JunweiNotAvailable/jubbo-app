@@ -5,7 +5,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../lib/types';
 import Header from '../components/Header';
-import { Ionicons } from '@expo/vector-icons';
+import { FONTS } from '../lib/constants';
 
 type AdvicesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Advices'>;
 type AdvicesScreenRouteProp = RouteProp<RootStackParamList, 'Advices'>;
@@ -83,9 +83,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
     marginBottom: 8,
     textTransform: 'capitalize',
+    fontFamily: FONTS.bold,
   },
 
   // Response Card (Section 1)
@@ -101,13 +101,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#2c3e50',
     lineHeight: 20,
-    fontWeight: '500',
+    fontFamily: FONTS.semiBold,
     marginBottom: 4,
   },
   responseReason: {
     fontSize: 14,
     color: '#aaa',
     lineHeight: 18,
+    fontFamily: FONTS.semiBold,
   },
 
   // Cards Grid (Sections 2 & 3)
@@ -136,11 +137,11 @@ const styles = StyleSheet.create({
   },
   wordCardTitleText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
   },
   wordCardSuggestionText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
   },
   wordCardSuggestion: {
     flexDirection: 'row',
@@ -159,7 +160,7 @@ const styles = StyleSheet.create({
   },
   toneCardTitle: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
     marginBottom: 4,
   },
   toneCardText: {
@@ -178,6 +179,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#7f8c8d',
     textAlign: 'center',
+    fontFamily: FONTS.regular,
     lineHeight: 24,
   },
 }); 
