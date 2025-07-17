@@ -124,7 +124,6 @@ export default function HomeScreen({ navigation }: Props) {
     try {
       setIsListening(false);
       setIsProcessing(true);
-      console.log(Config.apiUrl);
       
       // Step 1: Stop recording and get audio file
       const result = await audioService.stopRecording();
