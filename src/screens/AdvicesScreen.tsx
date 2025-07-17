@@ -5,8 +5,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../lib/types';
 import Header from '../components/Header';
-import { FONTS } from '../lib/constants';
+import { Colors, FONTS } from '../lib/constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LogoSvg } from '../components/Svgs';
 
 type AdvicesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Advices'>;
 type AdvicesScreenRouteProp = RouteProp<RootStackParamList, 'Advices'>;
@@ -19,7 +20,13 @@ interface Props {
 export default function AdvicesScreen({ navigation, route }: Props) {
   const { advice } = route.params || {};
 
-  const title = "Suggestions"
+  const title = "Suggestions";
+  const ToneColors = {
+    positive: Colors.green,
+    questioning: Colors.blue,
+    pushback: Colors.red,
+    redirect: Colors.gold,
+  };
 
   if (!advice) {
     return (
@@ -52,7 +59,10 @@ export default function AdvicesScreen({ navigation, route }: Props) {
         {/* Section 1: Full Response (Single Card) */}
         {Object.entries(data.response).map(([tone, response], index) => (
           <View key={index} style={styles.section}>
-            <Text style={styles.sectionTitle}>{tone}</Text>
+            <View style={styles.sectionHeader}>
+              <LogoSvg width={20} height={20} fillBody={ToneColors[tone as keyof typeof ToneColors]} fillDetail={'#fff'} />
+              <Text style={styles.sectionTitle}>{tone}</Text>
+            </View>
             <View style={styles.responseCard}>
               <Text style={styles.responseText}>
                 {response.response || 'No response available'}
@@ -82,9 +92,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 10,
   },
-  sectionTitle: {
-    fontSize: 16,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
+    gap: 10,
+  },
+  sectionTitle: {
+    marginTop: 4,
+    fontSize: 16,
     textTransform: 'capitalize',
     fontFamily: FONTS.bold,
   },

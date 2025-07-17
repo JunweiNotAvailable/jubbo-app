@@ -2,6 +2,10 @@ export const APP_NAME = "Jubbo";
 
 export const Colors = {
   primary: '#5478eb',
+  green: '#33bb66',
+  blue: '#4477dd',
+  red: '#ee6644',
+  gold: '#ffbb44',
 };
 
 export const FONTS = {

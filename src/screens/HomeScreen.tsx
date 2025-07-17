@@ -15,6 +15,7 @@ import Loader from '../components/Loader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import TempNameScreen from './TempNameScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LogoSvg } from '../components/Svgs';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -192,7 +193,7 @@ export default function HomeScreen({ navigation }: Props) {
           id: generateId('advice'),
           user_id: user?.id || '',
           created_at: new Date().toISOString(),
-          audio_url: result.uri, // Store local URI for now
+          input: analysisData.data.transcription,
           data: analysisData.data.advice as AdviceData,
         };
         
@@ -310,10 +311,7 @@ export default function HomeScreen({ navigation }: Props) {
           ]}
         >
           <View style={[styles.iconContainer]}>
-            <Image
-              source={require('../../assets/logo-white.png')}
-              style={[styles.icon]}
-            />
+            <LogoSvg fillBody={'#fff'} fillDetail={Colors.primary} width={120} height={120} />
           </View>
           <TouchableOpacity 
             style={styles.buttonTouchable}

@@ -14,7 +14,7 @@ export interface AdviceModel {
   id: string;
   user_id: string;
   created_at: string;
-  audio_url: string;
+  input: string;
   data: AdviceData;
 }
 
