@@ -119,17 +119,17 @@ export default function AnalysisScreen({ navigation, route }: Props) {
           </View>
           <View>
             <Text style={[styles.sectionContentText, { fontFamily: FONTS.bold, marginBottom: 8 }]}>Clear Decisions ({data.decisions_actions_problems.clear_decisions.length})</Text>
-            {data.decisions_actions_problems.clear_decisions.map((decision, index) => (
+            {data.decisions_actions_problems.clear_decisions?.map((decision, index) => (
               <Text key={index} style={[styles.sectionContentText, { marginBottom: 5, marginLeft: 10 }]}>• {decision}</Text>
             ))}
 
             <Text style={[styles.sectionContentText, { fontFamily: FONTS.bold, marginTop: 15, marginBottom: 8 }]}>Action Items ({data.decisions_actions_problems.action_items.length})</Text>
-            {data.decisions_actions_problems.action_items.map((item, index) => (
+            {data.decisions_actions_problems.action_items?.map((item, index) => (
               <Text key={index} style={[styles.sectionContentText, { marginBottom: 5, marginLeft: 10 }]}>• {item}</Text>
             ))}
 
             <Text style={[styles.sectionContentText, { fontFamily: FONTS.bold, marginTop: 15, marginBottom: 8 }]}>Unresolved Problems ({data.decisions_actions_problems.unresolved_problems.length})</Text>
-            {data.decisions_actions_problems.unresolved_problems.map((issue, index) => (
+            {data.decisions_actions_problems.unresolved_problems?.map((issue, index) => (
               <Text key={index} style={[styles.sectionContentText, { marginBottom: 5, marginLeft: 10 }]}>• {issue}</Text>
             ))}
           </View>
