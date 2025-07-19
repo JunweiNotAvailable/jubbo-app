@@ -10,24 +10,42 @@ export interface UserSettings {
   // TODO: Add user settings
 }
 
-export interface AdviceModel {
+export interface AnalysisModel {
   id: string;
   user_id: string;
   created_at: string;
-  input: string;
-  data: AdviceData;
-}
-
-export interface AdviceData {
-  response: {
-    positive: Response,
-    questioning: Response,
-    pushback: Response,
-    redirect: Response,
+  input: {
+    transcript: string;
+    total_time: number;
   };
+  data: AnalysisData;
 }
 
-interface Response {
-  response: string;
-  why: string;
+export interface AnalysisData {
+  efficiency_score: number;
+  meeting_duration_estimate: number;
+  key_issues: KeyIssue[];
+  conversation_aspects: ConversationAspects;
+  decisions_actions_problems: DecisionsActionsProblems;
+  improvement_suggestions: string[];
+  meeting_roast: string;
+}
+
+export interface KeyIssue {
+  type: string;
+  description: string;
+  improvement: string;
+}
+
+export interface ConversationAspects {
+  topic_focus: 'high' | 'medium' | 'low';
+  decision_clarity: 'high' | 'medium' | 'low';
+  participant_engagement: 'high' | 'medium' | 'low';
+  interruption_level: 'high' | 'medium' | 'low';
+}
+
+export interface DecisionsActionsProblems {
+  clear_decisions: string[];
+  action_items: string[];
+  unresolved_problems: string[];
 }

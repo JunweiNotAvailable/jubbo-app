@@ -1,5 +1,7 @@
 import {
   useFonts,
+  Nunito_200ExtraLight,
+  Nunito_300Light,
   Nunito_400Regular,
   Nunito_500Medium,
   Nunito_600SemiBold,
@@ -10,6 +12,8 @@ import {
 
 export const useNunitoFonts = () => {
   const [fontsLoaded] = useFonts({
+    Nunito_200ExtraLight,
+    Nunito_300Light,
     Nunito_400Regular,
     Nunito_500Medium,
     Nunito_600SemiBold,

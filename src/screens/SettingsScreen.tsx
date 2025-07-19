@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../lib/types';
@@ -9,7 +9,6 @@ import { Colors, FONTS } from '../lib/constants';
 import Loader from '../components/Loader';
 import { useAppContext } from '../contexts/AppContext';
 import Input from '../components/Input';
-import Select from '../components/Select';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
@@ -22,27 +21,19 @@ export default function SettingsScreen({ navigation }: Props) {
 
   const { user } = useAppContext();
 
-  const [personality, setPersonality] = useState<string>('');
-  const [aboutConversation, setAboutConversation] = useState<string>('');
-  const [selectedModel, setSelectedModel] = useState<string>('gemini');
+  const [teamInfo, setTeamInfo] = useState<string>('');
+  const [meetingInfo, setMeetingInfo] = useState<string>('');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const aiModels = [
-    { id: 'gemini', name: 'Gemini 2.0 Flash' },
-    { id: 'llama', name: 'Llama 4 Scout' },
-    { id: 'openai', name: 'GPT-4.1 Nano' },
-  ];
-
   useEffect(() => {
     const loadSettings = async () => {
-      const settings = await AsyncStorage.getItem('customization');
+      const settings = await AsyncStorage.getItem('meetingSettings');
       if (settings) {
-        const { personality, aboutConversation, selectedModel } = JSON.parse(settings);
-        setPersonality(personality || '');
-        setAboutConversation(aboutConversation || '');
-        setSelectedModel(selectedModel || 'gemini');
+        const { teamInfo, meetingInfo } = JSON.parse(settings);
+        setTeamInfo(teamInfo || '');
+        setMeetingInfo(meetingInfo || '');
       }
       setIsLoading(false);
     }
@@ -52,10 +43,9 @@ export default function SettingsScreen({ navigation }: Props) {
   const saveSettings = async () => {
     setIsSaving(true);
     try {
-      await AsyncStorage.setItem('customization', JSON.stringify({ 
-        personality, 
-        aboutConversation, 
-        selectedModel 
+      await AsyncStorage.setItem('meetingSettings', JSON.stringify({
+        teamInfo,
+        meetingInfo
       }));
       navigation.goBack();
     } catch (error) {
@@ -71,7 +61,8 @@ export default function SettingsScreen({ navigation }: Props) {
         <StatusBar style="auto" />
         <Header title="Settings" onBackPress={() => navigation.goBack()} />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading customization...</Text>
+          <Loader color={Colors.gray} />
+          <Text style={styles.loadingText}>Loading settings...</Text>
         </View>
       </SafeAreaView>
     );
@@ -92,58 +83,58 @@ export default function SettingsScreen({ navigation }: Props) {
       <StatusBar style="auto" />
 
       <Header
-        title="Settings"
+        title="Personalize"
         onBackPress={() => navigation.goBack()}
         rightComponent={saveButton}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingContainer}
+      >
+        <ScrollView 
+          style={styles.content} 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
 
-        {/* Personality Style */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tell us about yourself</Text>
-          <Text style={styles.sectionSubtitle}>
-            Hi, {user?.name}! Help us understand your communication style and personality
-          </Text>
-          <Input
-            placeholder="Describe your personality and communication preferences..."
-            value={personality}
-            onChangeText={(text: string) => setPersonality(text)}
-            multiline
-            numberOfLines={6}
-            textAlignVertical="top"
-            style={{ minHeight: 100 }}
-          />
-        </View>
+          {/* Team */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Team</Text>
+            <Text style={styles.sectionSubtitle}>
+              Tell us about the people in your meetings so we can analyze speaking patterns and dynamics
+            </Text>
+            <Input
+              placeholder="E.g. Sarah (PM, tends to dominate), Mike (engineer, interrupts when excited), Lisa (designer, often quiet), John (CEO, asks lots of questions)..."
+              value={teamInfo}
+              onChangeText={(text: string) => setTeamInfo(text)}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              style={{ minHeight: 120 }}
+            />
+          </View>
 
-        {/* About Conversation */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About the conversation</Text>
-          <Text style={styles.sectionSubtitle}>
-            Help us understand more about the conversation
-          </Text>
-          <Input
-            placeholder="Describe the conversation you're having"
-            value={aboutConversation}
-            onChangeText={(text: string) => setAboutConversation(text)}
-            multiline
-            numberOfLines={6}
-            textAlignVertical="top"
-            style={{ minHeight: 100 }}
-          />
-        </View>
+          {/* Meeting */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Meeting</Text>
+            <Text style={styles.sectionSubtitle}>
+              What do you want to optimize in your meetings and what are your current challenges?
+            </Text>
+            <Input
+              placeholder="Currently run 2x too long, lots of tangents, unclear action items. Want to reduce time waste and improve decision-making..."
+              value={meetingInfo}
+              onChangeText={(text: string) => setMeetingInfo(text)}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              style={{ minHeight: 120 }}
+            />
+          </View>
 
-        {/* AI Model Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>AI Model</Text>
-          <Select
-            value={selectedModel}
-            options={aiModels}
-            onSelect={setSelectedModel}
-          />
-        </View>
-
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -154,15 +145,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   loadingText: {
-    color: '#7f8c8d',
+    color: Colors.gray,
     fontSize: 16,
     fontFamily: FONTS.regular,
     textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 10,
   },
   saveButton: {
     paddingHorizontal: 16,
@@ -178,6 +171,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
+  keyboardAvoidingContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Extra padding to ensure last input is visible
+  },
   section: {
     marginVertical: 10,
   },
@@ -190,7 +189,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semiBold,
   },
   sectionSubtitle: {
-    color: '#7f8c8d',
+    color: Colors.gray,
     fontSize: 14,
     fontFamily: FONTS.regular,
     marginBottom: 10,

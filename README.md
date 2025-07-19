@@ -1,96 +1,76 @@
-# Jubbo - Real-Time Communication Assistant
+# Jubbo – AI Meeting Performance Auditor
 
-> **Make communication better**
+> **Make every meeting count.**
 
-Too often, we walk away from conversations thinking: “That’s not how I wanted to say it.”
-
-That's why we're here to bridge the gap between **intention** and **expression** — not after the fact, but *as it happens*.
+Most meeting tools just record, transcribe, and summarize.
+Jubbo goes further: it tells you **what actually happened, what went wrong, and how to make the next one better.**
 
 ---
 
 ## Goal
 
-An app that runs quietly in the background of your life and becomes your invisible communication ally.
+Turn every meeting into a **learning loop** — not just for individuals, but for the entire team.
 
-When you're mid-conversation and struggling to express yourself, it steps in to help by:
-- Listening to the conversation in real-time
-- Understanding what you’re trying to say
-- Suggesting better responses — words, tone, mindset
-- Offering emotional clarity or graceful pivots when needed
-- Helping you interrupt politely, speak directly, or soften a message — depending on what the moment calls for
+Jubbo listens, analyzes, and delivers a **Post-Meeting Diagnostic Report** so you can:
 
-Over time, the assistant learns from you and gradually helps you speak like the version of yourself you wish you could be in the moment.
+* Identify wasted time (repeated topics, long tangents, unnecessary loops)
+* Highlight vague points or unresolved decisions
+* Show who dominated vs who barely spoke
+* Detect missed opportunities to go deeper or assign actions
+* Suggest specific ways to make the *next* meeting shorter, sharper, and more productive
+
+The goal: **cut wasted time, boost clarity, and make meetings genuinely valuable.**
 
 ---
 
 ## Features
 
 ### Core Functionality
-- **Real-time Audio Recording**: High-quality audio capture with configurable settings
-- **AI-Powered Analysis**: Automatic transcription and conversation advice generation
-- **Personalized Suggestions**: AI learns from your communication preferences and style
-- **Offline Support**: Local storage fallback when server is unavailable
-- **User Preference Management**: Persistent settings with server sync
+
+* **Full Meeting Recording & Transcription**: High-quality audio capture and accurate transcription
+* **AI-Powered Meeting Diagnostics**:
+
+  * Tracks repeated mentions of topics (e.g., *"Budget came up 5 times – 10 minutes wasted"*)
+  * Highlights vague points or unresolved items (e.g., *"Website launch was discussed but no decision made"*)
+  * Analyzes speaker balance and engagement (e.g., *"Alice spoke 65%, Bob 5%"*)
+  * Identifies opportunities to deepen discussion or cut redundancy
+* **Actionable Recommendations**: A concise scorecard and suggestions for the next meeting (e.g., *"Combine status updates into an async doc to save 15 minutes"*).
 
 ### UI/UX
-- **Home Screen**: Clean interface with recording button and real-time status
-- **Advice Screen**: AI-generated suggestions with tone, mindset, and response recommendations
-- **Settings Screen**: Comprehensive preference management for personalized AI advice
+
+* **Meeting Dashboard**: List of past meetings with summaries and diagnostic scores
+* **Report View**: One-page AI-generated diagnostic, highlighting key issues and improvements
+* **Team Insights**: Speaker stats, engagement charts, and topic analysis
 
 ### Technical Features
-- **Generic API Client**: Flexible data operations for any database structure
-- **Modular Architecture**: Easy to extend with new AI actions and data types
-- **Error Handling**: Graceful degradation and meaningful error messages
-- **Performance Optimized**: Efficient audio processing and network operations
 
-## Tech Stack
-- **Frontend**: React Native with Expo
-- **Backend**: Node.js with Express (Generic REST API)
-- **Database**: Neon serverless PostgreSQL (flexible schema)
-- **AI Services**: 
-  - STT: Deepgram Nova-2 (speed, accuracy, cost balance)
-  - Advice Generation: Claude 3.5 Haiku (fastest response)
-- **Audio**: Expo Audio with configurable quality settings
+* **Accurate STT & Topic Detection**: Robust transcription and keyword/topic clustering
+* **Speaker Identification**: Distinguish and track contributions by participant
+* **Modular Reports**: Export as PDF or share with team automatically
+* **Data Privacy First**: Secure local storage and encrypted processing for sensitive conversations
 
-## Quick Start
+---
 
-1. **Prerequisites**:
-   - Node.js 18+ and npm
-   - Expo CLI (`npm install -g @expo/cli`)
-   - Running VibeTruely server (see `../server/README.md`)
+## Why Jubbo?
 
-2. **Installation**:
-   ```bash
-   cd native
-   npm install
-   ```
+Existing apps (Otter, Fireflies, etc.) give you notes and summaries — but they don’t tell you:
 
-3. **Configuration**:
-   ```bash
-   # Create environment file
-   echo "EXPO_PUBLIC_API_URL=http://localhost:3000/api" > .env
-   ```
+* *Where did we waste time?*
+* *Which points stayed unresolved?*
+* *Who’s dominating? Who’s silent?*
+* *How can we run this better next time?*
 
-4. **Development**:
-   ```bash
-   npm start    # Start Expo dev server
-   npm run ios  # Run on iOS simulator
-   npm run android  # Run on Android emulator
-   ```
+Jubbo fills that gap, helping teams save hours each week and improve collaboration.
 
-## Architecture
+---
 
-### API Integration
-The app uses a flexible API client that works with the generic server endpoints:
+## Next Steps
 
-- **Data Operations**: `/api/data/:table` for CRUD operations on any table
-- **AI Operations**: `/api/ai/*` for transcription, analysis, and advice generation
-- **Automatic Sync**: User preferences and conversations stored both locally and on server
+1. Build out the **Post-Meeting Diagnostic Report** template (core value).
+2. Integrate with existing meeting workflows (Zoom, Teams, Google Meet).
+3. Expand to **personal coaching** (optional) so individuals get private tips alongside team-level reports.
 
-### Key Components
-- **API Service** (`src/lib/api.ts`): Generic CRUD operations and AI integrations
-- **Audio Service** (`src/lib/audio.ts`): High-quality recording with Expo Audio
-- **Configuration** (`src/lib/constants.ts`): Centralized app and API configuration
-- **Screens**: Home (recording), Advice (suggestions), Settings (preferences)
+---
 
-For detailed setup instructions, see [SETUP.md](SETUP.md).
+Jubbo isn’t just another note-taker.
+It’s your **AI meeting coach** — making sure every meeting is worth everyone’s time.

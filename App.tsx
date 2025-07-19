@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './src/lib/types';
-import { HomeScreen, AdvicesScreen, SettingsScreen } from './src/screens';
+import { HomeScreen, AnalysisScreen, SettingsScreen } from './src/screens';
 import { AppProvider } from './src/contexts/AppContext';
 import { useNunitoFonts } from './src/lib/fonts';
 import { View } from 'react-native';
@@ -32,7 +32,7 @@ export default function App() {
           }}
         >
           <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Advices" component={AdvicesScreen} />
+          <Stack.Screen name="Analysis" component={AnalysisScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} options={{ presentation: 'modal' }} />
         </Stack.Navigator>
       </NavigationContainer>

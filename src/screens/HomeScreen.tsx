@@ -7,12 +7,12 @@ import { audioService, RecordingResult } from '../lib/audio';
 import { useAppContext } from '../contexts/AppContext';
 import { Config } from '../lib/config';
 import { generateId } from '../lib/functions';
-import { AdviceModel, AdviceData } from '../lib/models';
+import { AnalysisModel, AnalysisData } from '../lib/models';
 import Header from '../components/Header';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_NAME, Colors, FONTS } from '../lib/constants';
 import Loader from '../components/Loader';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import TempNameScreen from './TempNameScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LogoSvg } from '../components/Svgs';
@@ -27,10 +27,10 @@ export default function HomeScreen({ navigation }: Props) {
   const { user } = useAppContext();
   const [recordingResult, setRecordingResult] = useState<RecordingResult | null>(null);
   const [pulseAnimation] = useState(new Animated.Value(1));
-  const [selectedModel, setSelectedModel] = useState<string>('gemini');
 
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
 
   useEffect(() => {
     if (isListening) {
@@ -40,20 +40,25 @@ export default function HomeScreen({ navigation }: Props) {
     }
   }, [isListening]);
 
+  // Timer effect for recording duration
   useEffect(() => {
-    const loadModel = async () => {
-      try {
-        const settings = await AsyncStorage.getItem('customization');
-        if (settings) {
-          const { selectedModel } = JSON.parse(settings);
-          setSelectedModel(selectedModel || 'gemini-2.0-flash-exp');
-        }
-      } catch (error) {
-        console.error('Error loading model setting:', error);
+    let timer: NodeJS.Timeout;
+    
+    if (isListening) {
+      setRecordingTime(0); // Reset timer when starting
+      timer = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      setRecordingTime(0); // Reset when not recording
+    }
+
+    return () => {
+      if (timer) {
+        clearInterval(timer);
       }
     };
-    loadModel();
-  }, []);
+  }, [isListening]);
 
   const startPulseAnimation = () => {
     Animated.loop(
@@ -79,6 +84,23 @@ export default function HomeScreen({ navigation }: Props) {
       duration: 200,
       useNativeDriver: true,
     }).start();
+  };
+
+  /**
+   * Format recording time for display
+   * @param seconds - Total seconds recorded
+   * @returns Formatted time string (mm:ss or hh:mm:ss)
+   */
+  const formatRecordingTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
   };
 
   /**
@@ -134,7 +156,18 @@ export default function HomeScreen({ navigation }: Props) {
       
       setRecordingResult(result);
       
-      // Step 2: Prepare audio file for upload
+      // Step 2: Load personalized settings
+      const settings = await AsyncStorage.getItem('meetingSettings');
+      let teamInfo = '';
+      let meetingInfo = '';
+      
+      if (settings) {
+        const { teamInfo: savedTeamInfo, meetingInfo: savedMeetingInfo } = JSON.parse(settings);
+        teamInfo = savedTeamInfo || '';
+        meetingInfo = savedMeetingInfo || '';
+      }
+      
+      // Step 3: Prepare audio file for upload
       const formData = new FormData();
       
       // Add audio file to form data
@@ -144,20 +177,21 @@ export default function HomeScreen({ navigation }: Props) {
         name: 'recording.m4a',
       } as any);
       
-      // Add context information
+      // Add context information with personalization
       const context = {
         user_id: user?.id,
         timestamp: new Date().toISOString(),
-        duration: result.duration,
+        duration: Math.ceil(result.duration / 1000 / 60), // Convert to minutes
+        teamInfo: teamInfo,
+        meetingInfo: meetingInfo,
       };
       formData.append('context', JSON.stringify(context));
       
       // Add selected AI model
-      formData.append('model', selectedModel);
+      formData.append('model', 'gpt-4o-mini');
       
-      // Step 3: Send audio to server for complete analysis (transcription + advice)
+      // Step 4: Send audio to server for complete analysis (transcription + advice)
       console.log('Sending audio to server for analysis...');
-      console.log('Using AI model:', selectedModel);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for AI processing
@@ -187,40 +221,43 @@ export default function HomeScreen({ navigation }: Props) {
         
         console.log('Analysis completed successfully');
         
-        // Step 4: Create complete AdviceModel
-        const adviceModel: AdviceModel = {
-          id: generateId('advice'),
+        // Step 5: Create complete AnalysisModel
+        const analysisModel: AnalysisModel = {
+          id: generateId('analysis'),
           user_id: user?.id || '',
           created_at: new Date().toISOString(),
-          input: analysisData.data.transcription,
-          data: analysisData.data.advice as AdviceData,
+          input: {
+            transcript: analysisData.data.transcription,
+            total_time: Math.ceil(result.duration / 1000 / 60),
+          },
+          data: analysisData.data.analysis as AnalysisData,
         };
         
-        // Step 5: Navigate to advice screen immediately for better UX
-        navigation.navigate('Advices', { 
+        // Step 6: Navigate to analysis screen immediately for better UX
+        navigation.navigate('Analysis', { 
           result: result,
-          advice: adviceModel,
+          analysis: analysisModel,
         });
         
-        // Step 6: Save advice to database in background (non-blocking)
+        // Step 6: Save analysis to database in background (non-blocking)
         if (user) {
           // Fire and forget - save to database without blocking UI
-          fetch(`${Config.apiUrl}/api/data/advices`, {
+          fetch(`${Config.apiUrl}/api/data/analysis`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(adviceModel),
+            body: JSON.stringify(analysisModel),
           })
           .then(saveResponse => {
             if (saveResponse.ok) {
-              console.log('Advice saved to database successfully');
+              console.log('Analysis saved to database successfully');
             } else {
-              console.warn('Failed to save advice to database');
+              console.warn('Failed to save analysis to database');
             }
           })
           .catch(saveError => {
-            console.error('Error saving advice to database:', saveError);
+            console.error('Error saving analysis to database:', saveError);
           });
         }
         
@@ -318,9 +355,15 @@ export default function HomeScreen({ navigation }: Props) {
             disabled={isProcessing}
           >
             {isProcessing && <View style={{ marginBottom: 10 }}><Loader color='#fffc' size={24} strokeWidth={3} /></View>}
+            {isListening && (
+              <Text style={styles.timerText}>
+                {formatRecordingTime(recordingTime)}
+              </Text>
+            )}
             <Text style={[styles.buttonText, (isListening || isProcessing) && styles.buttonTextActive]}>
-              {isProcessing ? 'Thinking...' : isListening ? 'Listening...' : 'Tap to Listen'}
+              {isProcessing ? 'Analyzing...' : isListening ? 'Recording...' : 'Tap to Record'}
             </Text>
+            {isProcessing && <Text style={styles.processingText}>Please wait for a moment</Text>}
           </TouchableOpacity>
         </Animated.View>
         
@@ -440,5 +483,20 @@ const styles = StyleSheet.create({
   icon: {
     width: 100,
     height: 100,
+  },
+  processingText: {
+    fontSize: 12,
+    color: '#fffa',
+    fontWeight: '400',
+    fontFamily: FONTS.semiBold,
+    textAlign: 'center',
+    marginTop: 5,
+  },
+  timerText: {
+    fontSize: 18,
+    color: '#fffa',
+    fontFamily: FONTS.bold,
+    textAlign: 'center',
+    marginBottom: 8,
   },
 }); 

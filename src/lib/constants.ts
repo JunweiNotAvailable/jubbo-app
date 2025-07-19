@@ -5,10 +5,13 @@ export const Colors = {
   green: '#33bb66',
   blue: '#4477dd',
   red: '#ee6644',
-  gold: '#ffbb44',
+  gold: '#eeaa44',
+  gray: '#7f8c8d',
 };
 
 export const FONTS = {
+  extraLight: 'Nunito_200ExtraLight',
+  light: 'Nunito_300Light',
   regular: 'Nunito_400Regular',
   medium: 'Nunito_500Medium',
   semiBold: 'Nunito_600SemiBold',
