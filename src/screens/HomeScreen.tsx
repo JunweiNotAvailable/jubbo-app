@@ -181,7 +181,7 @@ export default function HomeScreen({ navigation }: Props) {
       const context = {
         user_id: user?.id,
         timestamp: new Date().toISOString(),
-        duration: Math.ceil(result.duration / 1000 / 60), // Convert to minutes
+        duration: Math.ceil(recordingTime / 60), // Convert seconds to minutes
         teamInfo: teamInfo,
         meetingInfo: meetingInfo,
       };
@@ -194,7 +194,7 @@ export default function HomeScreen({ navigation }: Props) {
       console.log('Sending audio to server for analysis...');
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for AI processing
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 30 second timeout for AI processing
       
       try {
         const response = await fetch(`${Config.apiUrl}/api/ai/analyze-audio`, {
@@ -228,7 +228,7 @@ export default function HomeScreen({ navigation }: Props) {
           created_at: new Date().toISOString(),
           input: {
             transcript: analysisData.data.transcription,
-            total_time: Math.ceil(result.duration / 1000 / 60),
+            total_time: Math.ceil(recordingTime / 60), // Convert seconds to minutes
           },
           data: analysisData.data.analysis as AnalysisData,
         };
