@@ -9,6 +9,7 @@ export interface RecordingResult {
 class AudioService {
   private recording: Audio.Recording | null = null;
   private isRecording = false;
+  private recordingStartTime: number = 0;
 
   async requestPermissions(): Promise<{ granted: boolean; message: string }> {
     try {
@@ -71,6 +72,7 @@ class AudioService {
 
       this.recording = recording;
       this.isRecording = true;
+      this.recordingStartTime = Date.now();
       
       console.log('Recording started successfully');
       return { success: true, message: 'Recording started successfully' };
@@ -109,10 +111,13 @@ class AudioService {
         throw new Error('Recording URI is null');
       }
 
+      const duration = Date.now() - this.recordingStartTime;
       console.log('Recording stopped successfully');
+      console.log('Recording duration:', duration, 'ms');
+      
       return {
         uri,
-        duration: status.durationMillis || 0,
+        duration: duration, // Use our calculated duration instead of status.durationMillis
       };
     } catch (error) {
       console.error('Failed to stop recording:', error);
@@ -129,6 +134,7 @@ class AudioService {
   async deleteRecording(uri: string): Promise<boolean> {
     try {
       await FileSystem.deleteAsync(uri);
+      console.log('Recording deleted:', uri);
       return true;
     } catch (error) {
       console.error('Failed to delete recording:', error);
@@ -146,4 +152,6 @@ class AudioService {
   }
 }
 
+// Export singleton instance
 export const audioService = new AudioService();
+export default audioService;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Animated, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,6 +32,14 @@ export default function HomeScreen({ navigation }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
 
+  // Chunking state
+  const [accumulatedTranscript, setAccumulatedTranscript] = useState('');
+  const [isProcessingChunk, setIsProcessingChunk] = useState(false);
+  const [lastChunkTime, setLastChunkTime] = useState(0);
+  const chunkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const CHUNK_DURATION = 30; // 3 minutes in seconds
+
   useEffect(() => {
     if (isListening) {
       startPulseAnimation();
@@ -40,14 +48,22 @@ export default function HomeScreen({ navigation }: Props) {
     }
   }, [isListening]);
 
-  // Timer effect for recording duration
+  // Timer effect for recording duration and chunk processing
   useEffect(() => {
     let timer: NodeJS.Timeout;
     
     if (isListening) {
-      setRecordingTime(0); // Reset timer when starting
       timer = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
+        setRecordingTime(prev => {
+          const newTime = prev + 1;
+          
+          // Check if we need to process a chunk (every 3 minutes)
+          if (newTime > 0 && newTime % CHUNK_DURATION === 0 && !isProcessingChunk) {
+            processChunk();
+          }
+          
+          return newTime;
+        });
       }, 1000);
     } else {
       setRecordingTime(0); // Reset when not recording
@@ -58,7 +74,16 @@ export default function HomeScreen({ navigation }: Props) {
         clearInterval(timer);
       }
     };
-  }, [isListening]);
+  }, [isListening, isProcessingChunk]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (chunkIntervalRef.current) {
+        clearTimeout(chunkIntervalRef.current);
+      }
+    };
+  }, []);
 
   const startPulseAnimation = () => {
     Animated.loop(
@@ -104,12 +129,114 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   /**
-   * Start audio recording
-   * Requests permissions and begins capturing audio
+   * Process a chunk of audio for transcription during recording
+   * Stops current recording, transcribes it, then starts a new recording
+   */
+  const processChunk = async () => {
+    if (isProcessingChunk || !audioService.getIsRecording()) {
+      return;
+    }
+
+    try {
+      setIsProcessingChunk(true);
+      console.log(`Processing chunk at ${recordingTime} seconds...`);
+
+      // Step 1: Stop current recording and get the chunk
+      const chunkResult = await audioService.stopRecording();
+      
+      if (!chunkResult || !chunkResult.uri) {
+        throw new Error('Failed to stop recording for chunk processing');
+      }
+
+      // Step 2: Start a new recording immediately (don't wait for transcription)
+      const restartResult = await audioService.startRecording();
+      if (!restartResult.success) {
+        throw new Error('Failed to restart recording');
+      }
+
+      // Step 3: Transcribe the chunk in the background
+      const transcriptResult = await transcribeAudioChunk(chunkResult.uri);
+      
+      if (transcriptResult && transcriptResult.transcript) {
+        setAccumulatedTranscript(prev => {
+          const newTranscript = prev + (prev ? ' ' : '') + transcriptResult.transcript;
+          console.log(`Chunk transcribed. Total transcript length: ${newTranscript.length} characters`);
+          return newTranscript;
+        });
+      }
+      
+      // Step 4: Clean up the chunk file
+      await audioService.deleteRecording(chunkResult.uri);
+      
+      setLastChunkTime(recordingTime);
+      console.log('Chunk processed successfully, recording continued');
+    } catch (error) {
+      console.error('Error processing chunk:', error);
+      // Try to restart recording if it failed
+      try {
+        if (!audioService.getIsRecording()) {
+          await audioService.startRecording();
+        }
+      } catch (restartError) {
+        console.error('Failed to restart recording after chunk error:', restartError);
+      }
+    } finally {
+      setIsProcessingChunk(false);
+    }
+  };
+
+  /**
+   * Transcribe a single audio chunk
+   */
+  const transcribeAudioChunk = async (audioUri: string): Promise<{ transcript: string; confidence: number } | null> => {
+    try {
+      const formData = new FormData();
+      
+      formData.append('audio', {
+        uri: audioUri,
+        type: 'audio/m4a',
+        name: 'chunk.m4a',
+      } as any);
+
+      const response = await fetch(`${Config.apiUrl}/api/ai/transcribe`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Transcription failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data.transcript) {
+        return {
+          transcript: result.data.transcript,
+          confidence: result.data.confidence || 0
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error transcribing chunk:', error);
+      return null;
+    }
+  };
+
+  /**
+   * Start audio recording and reset chunking state
    */
   const handleListen = async () => {
     try {
       console.log('User tapped listen button');
+      
+      // Reset chunking state
+      setAccumulatedTranscript('');
+      setLastChunkTime(0);
+      setIsProcessingChunk(false);
       
       // Start recording using audio service
       const result = await audioService.startRecording();
@@ -136,18 +263,17 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   /**
-   * Stop recording and process audio through complete AI pipeline
-   * 1. Stop audio recording
-   * 2. Upload audio to server for transcription and analysis
-   * 3. Save advice data to database
-   * 4. Navigate to advice screen with results
+   * Stop recording and process final chunk, then generate analysis
+   * Uses accumulated transcript from chunks plus final chunk transcription
    */
   const handleProcessAudio = async () => {
     try {
       setIsListening(false);
       setIsProcessing(true);
       
-      // Step 1: Stop recording and get audio file
+      console.log('Stopping recording and processing final chunk...');
+      
+      // Step 1: Stop recording and get final audio chunk
       const result = await audioService.stopRecording();
       
       if (!result || !result.uri) {
@@ -156,7 +282,25 @@ export default function HomeScreen({ navigation }: Props) {
       
       setRecordingResult(result);
       
-      // Step 2: Load personalized settings
+      // Step 2: Transcribe the final chunk (if any) and combine with accumulated transcript
+      let finalTranscript = accumulatedTranscript;
+      
+      if (recordingTime > lastChunkTime) {
+        console.log('Transcribing final chunk...');
+        const finalChunkResult = await transcribeAudioChunk(result.uri);
+        
+        if (finalChunkResult && finalChunkResult.transcript) {
+          finalTranscript += (finalTranscript ? ' ' : '') + finalChunkResult.transcript;
+          console.log(`Final chunk transcribed. Complete transcript length: ${finalTranscript.length} characters`);
+        }
+      }
+      
+      // Validate we have a transcript
+      if (!finalTranscript || finalTranscript.trim() === '') {
+        throw new Error('No transcription available from recording');
+      }
+      
+      // Step 3: Load personalized settings
       const settings = await AsyncStorage.getItem('meetingSettings');
       let teamInfo = '';
       let meetingInfo = '';
@@ -167,114 +311,85 @@ export default function HomeScreen({ navigation }: Props) {
         meetingInfo = savedMeetingInfo || '';
       }
       
-      // Step 3: Prepare audio file for upload
-      const formData = new FormData();
+      // Step 4: Generate analysis using accumulated transcript
+      console.log('Generating meeting analysis...');
       
-      // Add audio file to form data
-      formData.append('audio', {
-        uri: result.uri,
-        type: 'audio/m4a',
-        name: 'recording.m4a',
-      } as any);
-      
-      // Add context information with personalization
-      const context = {
-        user_id: user?.id,
-        timestamp: new Date().toISOString(),
-        duration: Math.ceil(recordingTime / 60), // Convert seconds to minutes
-        teamInfo: teamInfo,
-        meetingInfo: meetingInfo,
+      const analysisRequestBody = {
+        text: finalTranscript,
+        context: {
+          user_id: user?.id,
+          timestamp: new Date().toISOString(),
+          duration: Math.ceil(recordingTime / 60), // Convert seconds to minutes
+          teamInfo: teamInfo,
+          meetingInfo: meetingInfo,
+        },
+        model: 'gpt-4o-mini'
       };
-      formData.append('context', JSON.stringify(context));
       
-      // Add selected AI model
-      formData.append('model', 'gpt-4o-mini');
+      const analysisResponse = await fetch(`${Config.apiUrl}/api/ai/analysis`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(analysisRequestBody),
+      });
       
-      // Step 4: Send audio to server for complete analysis (transcription + advice)
-      console.log('Sending audio to server for analysis...');
+      if (!analysisResponse.ok) {
+        const errorData = await analysisResponse.json();
+        throw new Error(errorData.error || `Analysis failed: ${analysisResponse.status}`);
+      }
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 30 second timeout for AI processing
+      const analysisData = await analysisResponse.json();
       
-      try {
-        const response = await fetch(`${Config.apiUrl}/api/ai/analyze-audio`, {
+      if (!analysisData.success) {
+        throw new Error(analysisData.error || 'Analysis failed');
+      }
+      
+      console.log('Analysis completed successfully');
+      
+      // Step 5: Create complete AnalysisModel
+      const analysisModel: AnalysisModel = {
+        id: generateId('analysis'),
+        user_id: user?.id || '',
+        created_at: new Date().toISOString(),
+        input: {
+          transcript: finalTranscript,
+          total_time: Math.ceil(recordingTime / 60), // Convert seconds to minutes
+        },
+        data: analysisData.data as AnalysisData,
+      };
+      
+      // Step 6: Navigate to analysis screen immediately for better UX
+      navigation.navigate('Analysis', { 
+        result: result,
+        analysis: analysisModel,
+      });
+      
+      // Step 7: Save analysis to database in background (non-blocking)
+      if (user) {
+        // Fire and forget - save to database without blocking UI
+        fetch(`${Config.apiUrl}/api/data/analysis`, {
           method: 'POST',
-          body: formData,
           headers: {
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json',
           },
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || `Server error: ${response.status}`);
-        }
-        
-        const analysisData = await response.json();
-        
-        if (!analysisData.success) {
-          throw new Error(analysisData.error || 'Analysis failed');
-        }
-        
-        console.log('Analysis completed successfully');
-        
-        // Step 5: Create complete AnalysisModel
-        const analysisModel: AnalysisModel = {
-          id: generateId('analysis'),
-          user_id: user?.id || '',
-          created_at: new Date().toISOString(),
-          input: {
-            transcript: analysisData.data.transcription,
-            total_time: Math.ceil(recordingTime / 60), // Convert seconds to minutes
-          },
-          data: analysisData.data.analysis as AnalysisData,
-        };
-        
-        // Step 6: Navigate to analysis screen immediately for better UX
-        navigation.navigate('Analysis', { 
-          result: result,
-          analysis: analysisModel,
-        });
-        
-        // Step 6: Save analysis to database in background (non-blocking)
-        if (user) {
-          // Fire and forget - save to database without blocking UI
-          fetch(`${Config.apiUrl}/api/data/analysis`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(analysisModel),
-          })
-          .then(saveResponse => {
-            if (saveResponse.ok) {
-              console.log('Analysis saved to database successfully');
-            } else {
-              console.warn('Failed to save analysis to database');
-            }
-          })
-          .catch(saveError => {
-            console.error('Error saving analysis to database:', saveError);
-          });
-        }
-        
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        
-        if (fetchError instanceof Error) {
-          if (fetchError.name === 'AbortError') {
-            throw new Error('Processing is taking longer than expected. This can happen with longer recordings or during high server load. Please try with a shorter recording or try again later.');
-          } else if (fetchError.message.includes('Network request failed') || fetchError.message.includes('fetch')) {
-            throw new Error('Unable to connect to server. Please check your network connection.');
+          body: JSON.stringify(analysisModel),
+        })
+        .then(saveResponse => {
+          if (saveResponse.ok) {
+            console.log('Analysis saved to database successfully');
           } else {
-            throw fetchError;
+            console.warn('Failed to save analysis to database');
           }
-        } else {
-          throw new Error('An unexpected error occurred during audio processing.');
-        }
+        })
+        .catch(saveError => {
+          console.error('Error saving analysis to database:', saveError);
+        });
+      }
+      
+      // Step 8: Clean up the final recording file
+      if (result.uri) {
+        await audioService.deleteRecording(result.uri);
       }
       
     } catch (error) {
@@ -312,6 +427,10 @@ export default function HomeScreen({ navigation }: Props) {
     } finally {
       setIsProcessing(false);
       setRecordingResult(null);
+      // Reset chunking state
+      setAccumulatedTranscript('');
+      setLastChunkTime(0);
+      setIsProcessingChunk(false);
     }
   };
 
@@ -356,9 +475,11 @@ export default function HomeScreen({ navigation }: Props) {
           >
             {isProcessing && <View style={{ marginBottom: 10 }}><Loader color='#fffc' size={24} strokeWidth={3} /></View>}
             {isListening && (
-              <Text style={styles.timerText}>
-                {formatRecordingTime(recordingTime)}
-              </Text>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={styles.timerText}>
+                  {formatRecordingTime(recordingTime)}
+                </Text>
+              </View>
             )}
             <Text style={[styles.buttonText, (isListening || isProcessing) && styles.buttonTextActive]}>
               {isProcessing ? 'Analyzing...' : isListening ? 'Recording...' : 'Tap to Record'}
@@ -498,5 +619,19 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     textAlign: 'center',
     marginBottom: 8,
+  },
+  chunkProcessingText: {
+    fontSize: 14,
+    color: '#fffa',
+    fontFamily: FONTS.semiBold,
+    textAlign: 'center',
+    marginTop: 5,
+  },
+  chunkStatusText: {
+    fontSize: 12,
+    color: '#fffa',
+    fontFamily: FONTS.semiBold,
+    textAlign: 'center',
+    marginTop: 2,
   },
 }); 
