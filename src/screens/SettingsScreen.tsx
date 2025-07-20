@@ -23,6 +23,7 @@ export default function SettingsScreen({ navigation }: Props) {
 
   const [teamInfo, setTeamInfo] = useState<string>('');
   const [meetingInfo, setMeetingInfo] = useState<string>('');
+  const [memberCount, setMemberCount] = useState<number>(0);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -31,9 +32,10 @@ export default function SettingsScreen({ navigation }: Props) {
     const loadSettings = async () => {
       const settings = await AsyncStorage.getItem('meetingSettings');
       if (settings) {
-        const { teamInfo, meetingInfo } = JSON.parse(settings);
+        const { teamInfo, meetingInfo, memberCount } = JSON.parse(settings);
         setTeamInfo(teamInfo || '');
         setMeetingInfo(meetingInfo || '');
+        setMemberCount(memberCount || 0);
       }
       setIsLoading(false);
     }
@@ -45,7 +47,8 @@ export default function SettingsScreen({ navigation }: Props) {
     try {
       await AsyncStorage.setItem('meetingSettings', JSON.stringify({
         teamInfo,
-        meetingInfo
+        meetingInfo,
+        memberCount
       }));
       navigation.goBack();
     } catch (error) {
@@ -133,6 +136,19 @@ export default function SettingsScreen({ navigation }: Props) {
             />
           </View>
 
+          {/* Member Count */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Member Count</Text>
+            <Text style={styles.sectionSubtitle}>
+              How many people are typically in the meeting?
+            </Text>
+            <Input
+              placeholder="E.g. 6"
+              value={memberCount.toString()}
+              onChangeText={(text: string) => setMemberCount(parseInt(text) || 0)}
+              keyboardType="numeric"
+            />
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

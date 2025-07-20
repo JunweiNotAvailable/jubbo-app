@@ -171,11 +171,13 @@ export default function HomeScreen({ navigation }: Props) {
       const settings = await AsyncStorage.getItem('meetingSettings');
       let teamInfo = '';
       let meetingInfo = '';
-      
+      let memberCount = 0;
+
       if (settings) {
-        const { teamInfo: savedTeamInfo, meetingInfo: savedMeetingInfo } = JSON.parse(settings);
+        const { teamInfo: savedTeamInfo, meetingInfo: savedMeetingInfo, memberCount: savedMemberCount } = JSON.parse(settings);
         teamInfo = savedTeamInfo || '';
         meetingInfo = savedMeetingInfo || '';
+        memberCount = savedMemberCount || 0;
       }
       
       formData.append('context', JSON.stringify({
@@ -184,6 +186,7 @@ export default function HomeScreen({ navigation }: Props) {
         duration: Math.ceil(recordingTime / 60), // Convert seconds to minutes
         teamInfo: teamInfo,
         meetingInfo: meetingInfo,
+        memberCount: memberCount,
       }));
       
       formData.append('model', 'llama-4-scout');
