@@ -26,6 +26,7 @@ export interface AnalysisData {
   meeting_duration_estimate: number;
   key_issues: KeyIssue[];
   conversation_aspects: ConversationAspects;
+  speaker_analysis: SpeakerAnalysis;
   decisions_actions_problems: DecisionsActionsProblems;
   improvement_suggestions: string[];
   meeting_roast: string;
@@ -48,4 +49,24 @@ export interface DecisionsActionsProblems {
   clear_decisions: string[];
   action_items: string[];
   unresolved_problems: string[];
+}
+
+export interface SpeakerAnalysis {
+  speaking_distribution: SpeakingDistribution[];
+  interaction_patterns: InteractionPatterns;
+}
+
+export interface SpeakingDistribution {
+  speaker: string;
+  participation_level: 'high' | 'medium' | 'low';
+  contribution_quality: 'high' | 'medium' | 'low';
+  preparation_level: 'well-prepared' | 'moderately-prepared' | 'unprepared';
+  key_behaviors: string[];
+}
+
+export interface InteractionPatterns {
+  most_interruptions: string;
+  meeting_leader: string;
+  most_valuable_contributor: string;
+  passive_participants: string[];
 }
