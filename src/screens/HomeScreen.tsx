@@ -161,7 +161,7 @@ export default function HomeScreen({ navigation }: Props) {
         setAccumulatedTranscript(prev => {
           const newTranscript = prev + (prev ? ' ' : '') + transcriptResult.transcript;
           console.log(`Chunk transcribed. Total transcript length: ${newTranscript.length} characters`);
-          return newTranscript;
+          return `\n[${formatRecordingTime(recordingTime)}]\n${newTranscript}`;
         });
       }
       
@@ -323,7 +323,7 @@ export default function HomeScreen({ navigation }: Props) {
           teamInfo: teamInfo,
           meetingInfo: meetingInfo,
         },
-        model: 'gpt-4o-mini'
+        model: 'llama-4-scout'
       };
       
       const analysisResponse = await fetch(`${Config.apiUrl}/api/ai/analysis`, {
